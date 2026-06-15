@@ -107,7 +107,7 @@ async function analyzeInvoice(file) {
           contents: [{
             parts: [
               { inlineData: { mimeType, data: base64 } },
-              { text: `Analyse cette facture d'achat et extrais tous les articles achetés. Pour chaque article donne le nom court et clair de l'article, la quantité totale achetée, et le prix total réellement payé pour cet article (après réductions si visibles). Réponds UNIQUEMENT en JSON valide sans backticks ni texte autour, exactement dans ce format: {"articles": [{"nom": "Bague Acier Noir", "quantite": 10, "prixTotal": 4.86}]}` }
+              { text: `Analyse cette facture d'achat. Pour chaque article extrait: le nom court et clair, la quantité achetée, et le prix total RÉELLEMENT PAYÉ après toutes les réductions appliquées à cet article. Si des réductions sont mentionnées pour des articles spécifiques, soustrait-les du prix original de l'article concerné. Le total de tous les prixTotal doit correspondre au total final de la commande (après réductions, avant ou après livraison). Réponds UNIQUEMENT en JSON valide sans backticks ni texte autour, exactement dans ce format: {"articles": [{"nom": "Bague Acier Noir", "quantite": 10, "prixTotal": 4.86}]}` }
             ]
           }],
           generationConfig: { temperature: 0.1 }
