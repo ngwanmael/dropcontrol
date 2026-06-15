@@ -327,8 +327,184 @@
     .shortcut-desc { font-size:13px; color:rgba(255,255,255,0.7); }
     .shortcut-keys { display:flex; align-items:center; gap:4px; }
     .shortcut-sep { font-size:10px; color:rgba(255,255,255,0.2); }
-    .shortcut-hint-btn { display:flex; align-items:center; gap:6px; padding:8px 10px; border-radius:9px; font-size:11px; color:rgba(255,255,255,0.3); transition:all 0.18s; cursor:pointer; width:100%; }
-    .shortcut-hint-btn:hover { background:rgba(255,255,255,0.05); color:rgba(255,255,255,0.6); }
+    /* ══════════════════════════════════════════════
+       BOUTON IA — Style premium animé
+    ══════════════════════════════════════════════ */
+    @keyframes ai-gradient { 0%{background-position:0% 50%} 50%{background-position:100% 50%} 100%{background-position:0% 50%} }
+    @keyframes ai-pulse { 0%,100%{box-shadow:0 0 0 0 rgba(139,92,246,0.4),0 0 20px rgba(52,211,153,0.15)} 50%{box-shadow:0 0 0 8px rgba(139,92,246,0),0 0 30px rgba(52,211,153,0.25)} }
+    @keyframes ai-spin { to{transform:rotate(360deg)} }
+    @keyframes ai-ripple { 0%{transform:scale(0);opacity:1} 100%{transform:scale(4);opacity:0} }
+    @keyframes ai-scan { 0%{top:0%} 100%{top:100%} }
+    @keyframes ai-particle { 0%{transform:translateY(0) translateX(0);opacity:0} 20%{opacity:1} 100%{transform:translateY(-60px) translateX(var(--tx));opacity:0} }
+    @keyframes ai-type { from{opacity:0;transform:translateX(-6px)} to{opacity:1;transform:none} }
+    @keyframes ai-border { 0%,100%{border-color:rgba(139,92,246,0.5)} 33%{border-color:rgba(52,211,153,0.5)} 66%{border-color:rgba(96,165,250,0.5)} }
+    @keyframes ai-glow { 0%,100%{text-shadow:0 0 10px rgba(139,92,246,0.6)} 50%{text-shadow:0 0 20px rgba(52,211,153,0.8)} }
+    @keyframes grid-move { 0%{background-position:0 0} 100%{background-position:40px 40px} }
+
+    .btn-ai {
+      position: relative; overflow: hidden;
+      background: linear-gradient(135deg, #7c3aed, #2563eb, #0891b2, #34d399, #7c3aed);
+      background-size: 300% 300%;
+      animation: ai-gradient 4s ease infinite, ai-pulse 3s ease-in-out infinite;
+      border: none; border-radius: 14px;
+      padding: 12px 20px; width: 100%;
+      color: white; font-size: 14px; font-weight: 600;
+      cursor: pointer; letter-spacing: 0.02em;
+      transition: transform 0.2s, filter 0.2s;
+      display: flex; align-items: center; justify-content: center; gap: 8px;
+    }
+    .btn-ai:hover { transform: translateY(-2px) scale(1.01); filter: brightness(1.15); }
+    .btn-ai:active { transform: scale(0.97); }
+    .btn-ai .ai-icon { width: 16px; height: 16px; transition: transform 0.3s; }
+    .btn-ai:hover .ai-icon { animation: ai-spin 1s linear infinite; }
+    .btn-ai .ripple {
+      position: absolute; border-radius: 50%;
+      background: rgba(255,255,255,0.3);
+      width: 80px; height: 80px;
+      margin: -40px; pointer-events: none;
+      animation: ai-ripple 0.6s ease-out forwards;
+    }
+    .btn-ai-label { position: relative; z-index: 1; }
+    .btn-ai::before {
+      content: ''; position: absolute; inset: 0;
+      background: linear-gradient(180deg, rgba(255,255,255,0.12), transparent);
+      pointer-events: none;
+    }
+
+    /* ── Modal IA ── */
+    .ai-modal-bg {
+      background: rgba(5,5,8,0.85);
+      backdrop-filter: blur(32px) saturate(1.8);
+    }
+    .ai-modal-card {
+      background: linear-gradient(145deg, #13131a, #0d0d14);
+      border: 1px solid rgba(139,92,246,0.25);
+      box-shadow: 0 0 60px rgba(139,92,246,0.12), 0 24px 80px rgba(0,0,0,0.8), inset 0 1px 0 rgba(255,255,255,0.05);
+      border-radius: 20px;
+      position: relative; overflow: hidden;
+    }
+    .ai-modal-card::before {
+      content: ''; position: absolute; inset: 0; pointer-events: none;
+      background-image: linear-gradient(rgba(139,92,246,0.04) 1px, transparent 1px),
+                        linear-gradient(90deg, rgba(139,92,246,0.04) 1px, transparent 1px);
+      background-size: 40px 40px;
+      animation: grid-move 3s linear infinite;
+    }
+    .ai-modal-title { 
+      background: linear-gradient(135deg, #a78bfa, #34d399, #60a5fa);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+      background-clip: text; font-weight: 700; font-size: 18px;
+      animation: ai-glow 3s ease-in-out infinite;
+    }
+    .ai-badge {
+      background: linear-gradient(135deg, rgba(139,92,246,0.2), rgba(52,211,153,0.1));
+      border: 1px solid rgba(139,92,246,0.3);
+      border-radius: 20px; padding: 3px 10px;
+      font-size: 10px; font-weight: 600; color: #a78bfa;
+      letter-spacing: 0.06em; text-transform: uppercase;
+    }
+
+    /* ── Zone upload IA ── */
+    .ai-upload-zone {
+      border: 2px dashed rgba(139,92,246,0.3);
+      border-radius: 16px; padding: 36px 20px;
+      text-align: center; cursor: pointer;
+      transition: all 0.3s;
+      animation: ai-border 4s ease-in-out infinite;
+      position: relative; overflow: hidden;
+    }
+    .ai-upload-zone:hover {
+      border-color: rgba(52,211,153,0.5);
+      background: rgba(52,211,153,0.03);
+    }
+    .ai-upload-zone.drag-active {
+      border-color: #34d399;
+      background: rgba(52,211,153,0.06);
+      transform: scale(1.02);
+    }
+    .ai-upload-icon { 
+      width: 48px; height: 48px; margin: 0 auto 14px;
+      background: linear-gradient(135deg, rgba(139,92,246,0.15), rgba(52,211,153,0.1));
+      border: 1px solid rgba(139,92,246,0.25);
+      border-radius: 14px; display: flex; align-items: center; justify-content: center;
+    }
+    .ai-upload-btn {
+      margin-top: 16px; display: inline-flex; align-items: center; gap: 6px;
+      padding: 8px 18px; border-radius: 10px;
+      background: linear-gradient(135deg, rgba(139,92,246,0.15), rgba(52,211,153,0.1));
+      border: 1px solid rgba(139,92,246,0.25);
+      color: #a78bfa; font-size: 13px; font-weight: 500;
+      transition: all 0.2s; cursor: pointer;
+    }
+    .ai-upload-btn:hover { background: rgba(139,92,246,0.2); transform: translateY(-1px); }
+
+    /* ── Loading IA ── */
+    .ai-scanner {
+      position: relative; width: 100%; height: 120px;
+      background: linear-gradient(135deg, rgba(139,92,246,0.05), rgba(52,211,153,0.03));
+      border: 1px solid rgba(139,92,246,0.15);
+      border-radius: 12px; overflow: hidden; margin-bottom: 16px;
+    }
+    .ai-scanner-line {
+      position: absolute; left: 0; right: 0; height: 2px;
+      background: linear-gradient(90deg, transparent, #a78bfa, #34d399, #a78bfa, transparent);
+      animation: ai-scan 1.8s ease-in-out infinite;
+      box-shadow: 0 0 12px rgba(167,139,250,0.6);
+    }
+    .ai-scanner-grid {
+      position: absolute; inset: 0;
+      background-image: linear-gradient(rgba(139,92,246,0.08) 1px, transparent 1px),
+                        linear-gradient(90deg, rgba(139,92,246,0.08) 1px, transparent 1px);
+      background-size: 20px 20px;
+    }
+    .ai-loading-text {
+      font-size: 13px; font-weight: 500;
+      background: linear-gradient(135deg, #a78bfa, #34d399);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+      background-clip: text; animation: ai-glow 2s ease-in-out infinite;
+    }
+
+    /* ── Items résultat IA ── */
+    .ai-item {
+      display: flex; align-items: center; gap: 10px;
+      padding: 12px 14px;
+      background: linear-gradient(135deg, rgba(139,92,246,0.06), rgba(52,211,153,0.03));
+      border: 1px solid rgba(139,92,246,0.15);
+      border-radius: 12px;
+      animation: ai-type 0.3s ease-out both;
+    }
+    .ai-item:hover { border-color: rgba(139,92,246,0.3); background: rgba(139,92,246,0.08); }
+    .ai-item input[type="text"] {
+      background: transparent; border: none; border-bottom: 1px solid rgba(255,255,255,0.08);
+      outline: none; color: white; font-size: 13px; font-weight: 500; width: 100%; padding-bottom: 2px;
+    }
+    .ai-item input[type="text"]:focus { border-bottom-color: rgba(167,139,250,0.5); }
+    .ai-item input[type="number"] {
+      background: rgba(139,92,246,0.08); border: 1px solid rgba(139,92,246,0.2);
+      border-radius: 8px; color: white; font-size: 12px; padding: 4px 8px;
+      width: 52px; text-align: center; outline: none;
+    }
+    .ai-item input[type="number"]:focus { border-color: rgba(167,139,250,0.5); }
+    .ai-price-input {
+      background: rgba(52,211,153,0.08) !important;
+      border: 1px solid rgba(52,211,153,0.2) !important;
+      color: #34d399 !important; width: 64px !important;
+    }
+    .ai-price-input:focus { border-color: rgba(52,211,153,0.5) !important; }
+    .btn-ai-confirm {
+      background: linear-gradient(135deg, #7c3aed, #34d399);
+      background-size: 200% 200%; animation: ai-gradient 3s ease infinite;
+      border: none; border-radius: 12px; color: white; font-size: 14px;
+      font-weight: 600; padding: 12px; cursor: pointer; flex: 1;
+      transition: transform 0.2s, filter 0.2s;
+    }
+    .btn-ai-confirm:hover { transform: translateY(-1px); filter: brightness(1.1); }
+    .btn-ai-cancel {
+      background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 12px; color: rgba(255,255,255,0.6); font-size: 14px;
+      padding: 12px; cursor: pointer; flex: 1; transition: all 0.2s;
+    }
+    .btn-ai-cancel:hover { background: rgba(255,255,255,0.08); color: white; }
 
     /* ══════════════════════════════════════════════
        BOTTOM NAV — mobile uniquement
@@ -833,9 +1009,9 @@
             <i data-lucide="plus" class="w-4 h-4"></i>
             Ajouter le lot à l'inventaire
           </button>
-          <button id="btn-import-invoice" type="button" class="w-full py-2.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-sm font-medium hover:bg-emerald-500/20 transition flex items-center justify-center gap-2">
-            <i data-lucide="file-scan" class="w-4 h-4"></i>
-            Importer une facture (IA)
+          <button id="btn-import-invoice" type="button" class="btn-ai mt-1">
+            <i data-lucide="sparkles" class="ai-icon"></i>
+            <span class="btn-ai-label">Importer une facture IA</span>
           </button>
         </div>
         <div class="lg:col-span-2 panel-glass rounded-2xl p-6">
@@ -966,57 +1142,76 @@
     </div>
   </div>
 
-  <!-- IMPORT FACTURE IA -->
-  <div id="import-invoice-modal" class="fixed inset-0 z-[400] hidden items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-    <div class="panel-glass rounded-2xl p-6 w-full max-w-lg">
-      <div class="flex items-center justify-between mb-6">
+  <!-- IMPORT FACTURE IA — Style premium -->
+  <div id="import-invoice-modal" class="fixed inset-0 z-[400] hidden items-center justify-center ai-modal-bg p-4">
+    <div class="ai-modal-card p-6 w-full max-w-lg" style="position:relative;z-index:1">
+      <!-- Header -->
+      <div class="flex items-center justify-between mb-5" style="position:relative;z-index:1">
         <div class="flex items-center gap-3">
-          <div style="width:36px;height:36px;border-radius:10px;background:rgba(52,211,153,0.1);border:1px solid rgba(52,211,153,0.2);display:flex;align-items:center;justify-content:center">
-            <i data-lucide="file-scan" class="w-5 h-5 text-emerald-400"></i>
+          <div style="width:40px;height:40px;border-radius:12px;background:linear-gradient(135deg,rgba(124,58,237,0.2),rgba(52,211,153,0.1));border:1px solid rgba(124,58,237,0.3);display:flex;align-items:center;justify-content:center">
+            <i data-lucide="sparkles" style="width:20px;height:20px;color:#a78bfa"></i>
           </div>
           <div>
-            <h3 class="text-white font-semibold text-base">Import Facture IA</h3>
-            <p class="text-xs text-white/40">Temu, AliExpress, ou toute autre facture</p>
+            <div class="ai-modal-title">Import Facture IA</div>
+            <div style="display:flex;align-items:center;gap:6px;margin-top:2px">
+              <span class="ai-badge">Gemini 2.5</span>
+              <span style="font-size:11px;color:rgba(255,255,255,0.3)">Lecture automatique</span>
+            </div>
           </div>
         </div>
-        <button id="btn-import-invoice-close" class="p-1.5 rounded-lg hover:bg-white/10 text-gray-400 hover:text-white transition"><i data-lucide="x" class="w-4 h-4"></i></button>
+        <button id="btn-import-invoice-close" style="padding:8px;border-radius:10px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);color:rgba(255,255,255,0.4);cursor:pointer;transition:all 0.2s" onmouseover="this.style.background='rgba(255,255,255,0.08)';this.style.color='white'" onmouseout="this.style.background='rgba(255,255,255,0.04)';this.style.color='rgba(255,255,255,0.4)'">
+          <i data-lucide="x" style="width:16px;height:16px"></i>
+        </button>
       </div>
 
       <!-- Zone upload -->
-      <div id="import-upload-zone" style="border:2px dashed rgba(255,255,255,0.1);border-radius:14px;padding:32px 20px;text-align:center;cursor:pointer;transition:all 0.2s" onclick="document.getElementById('import-file-input').click()">
+      <div id="import-upload-zone" class="ai-upload-zone" style="position:relative;z-index:1" onclick="document.getElementById('import-file-input').click()">
         <input type="file" id="import-file-input" accept="image/*,application/pdf" class="hidden">
-        <i data-lucide="upload-cloud" style="width:36px;height:36px;color:#34d399;margin:0 auto 12px"></i>
-        <p class="text-white font-medium text-sm mb-1">Dépose ta facture ici</p>
-        <p class="text-xs" style="color:rgba(255,255,255,0.35)">Photo ou PDF · Gemini lit et extrait les articles automatiquement</p>
-        <div class="mt-4 inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium text-emerald-400" style="background:rgba(52,211,153,0.08);border:1px solid rgba(52,211,153,0.2)">
-          <i data-lucide="folder-open" style="width:14px;height:14px"></i>
+        <div class="ai-upload-icon">
+          <i data-lucide="file-scan" style="width:22px;height:22px;color:#a78bfa"></i>
+        </div>
+        <p style="color:white;font-weight:600;font-size:15px;margin-bottom:6px">Dépose ta facture ici</p>
+        <p style="color:rgba(255,255,255,0.35);font-size:12px;line-height:1.5">Photo ou PDF · Temu, AliExpress, ou toute autre plateforme<br>Gemini lit et extrait les articles automatiquement</p>
+        <div class="ai-upload-btn" onclick="event.stopPropagation();document.getElementById('import-file-input').click()">
+          <i data-lucide="upload" style="width:13px;height:13px"></i>
           Choisir un fichier
         </div>
       </div>
 
-      <!-- Loading -->
-      <div id="import-loading" class="hidden text-center py-10">
-        <div style="width:38px;height:38px;border-radius:50%;border:3px solid rgba(52,211,153,0.15);border-top-color:#34d399;animation:dc-spin 0.75s linear infinite;margin:0 auto 14px"></div>
-        <p class="text-white/60 text-sm">Gemini analyse ta facture…</p>
-        <p class="text-white/30 text-xs mt-1">Quelques secondes</p>
+      <!-- Loading IA -->
+      <div id="import-loading" class="hidden" style="position:relative;z-index:1">
+        <div class="ai-scanner">
+          <div class="ai-scanner-grid"></div>
+          <div class="ai-scanner-line"></div>
+          <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:8px">
+            <p style="color:rgba(255,255,255,0.5);font-size:11px;text-transform:uppercase;letter-spacing:.08em">Analyse en cours</p>
+          </div>
+        </div>
+        <p class="ai-loading-text" style="text-align:center">Gemini analyse ta facture…</p>
+        <p style="text-align:center;color:rgba(255,255,255,0.25);font-size:11px;margin-top:4px">Extraction des articles, quantités et prix réels</p>
       </div>
 
       <!-- Résultats -->
-      <div id="import-results" class="hidden">
-        <p class="text-xs uppercase tracking-wider mb-3" style="color:rgba(255,255,255,0.35)">Articles détectés — tu peux modifier avant de confirmer</p>
+      <div id="import-results" class="hidden" style="position:relative;z-index:1">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">
+          <i data-lucide="check-circle" style="width:14px;height:14px;color:#34d399"></i>
+          <p style="font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:rgba(255,255,255,0.4)">Articles détectés — modifiables avant confirmation</p>
+        </div>
         <div id="import-items-list" class="space-y-2 mb-4" style="max-height:280px;overflow-y:auto"></div>
-        <div class="flex gap-3 mt-2">
-          <button id="btn-import-cancel" class="flex-1 py-2.5 rounded-xl text-sm transition" style="background:rgba(255,255,255,0.05);color:white">Annuler</button>
-          <button id="btn-import-confirm" class="flex-1 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white text-sm font-semibold transition">✅ Créer les stocks</button>
+        <div style="display:flex;gap:10px;margin-top:8px">
+          <button id="btn-import-cancel" class="btn-ai-cancel">Annuler</button>
+          <button id="btn-import-confirm" class="btn-ai-confirm">✅ Créer les stocks</button>
         </div>
       </div>
 
       <!-- Erreur -->
-      <div id="import-error" class="hidden text-center py-8">
-        <i data-lucide="alert-circle" style="width:32px;height:32px;color:#f87171;margin:0 auto 10px"></i>
-        <p class="text-red-400 text-sm mb-1" id="import-error-msg">Impossible d'analyser cette facture</p>
-        <p class="text-white/30 text-xs mb-4">Essaie avec une photo plus nette ou un PDF</p>
-        <button onclick="resetImportModal()" class="text-xs text-emerald-400 hover:text-emerald-300 transition">↩ Réessayer</button>
+      <div id="import-error" class="hidden" style="text-align:center;padding:32px 0;position:relative;z-index:1">
+        <div style="width:48px;height:48px;border-radius:14px;background:rgba(248,113,113,0.1);border:1px solid rgba(248,113,113,0.2);display:flex;align-items:center;justify-content:center;margin:0 auto 12px">
+          <i data-lucide="alert-triangle" style="width:22px;height:22px;color:#f87171"></i>
+        </div>
+        <p style="color:#f87171;font-size:14px;font-weight:500;margin-bottom:4px" id="import-error-msg">Impossible d'analyser cette facture</p>
+        <p style="color:rgba(255,255,255,0.25);font-size:12px;margin-bottom:16px">Essaie avec une photo plus nette ou un PDF</p>
+        <button onclick="resetImportModal()" style="color:#a78bfa;font-size:13px;background:none;border:none;cursor:pointer;text-decoration:underline">↩ Réessayer</button>
       </div>
     </div>
   </div>

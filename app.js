@@ -140,23 +140,20 @@ function showImportResults() {
   list.innerHTML = '';
   importedItems.forEach((item, i) => {
     const div = document.createElement('div');
-    div.style.cssText = 'display:flex;align-items:center;gap:10px;padding:10px 12px;background:rgba(255,255,255,0.04);border-radius:10px;border:1px solid rgba(255,255,255,0.08)';
+    div.className = 'ai-item';
+    div.style.animationDelay = `${i * 80}ms`;
     div.innerHTML = `
       <div style="flex:1;min-width:0">
-        <input type="text" value="${item.nom}" data-idx="${i}" data-field="nom"
-          style="background:transparent;border:none;border-bottom:1px solid rgba(255,255,255,0.1);outline:none;color:white;font-size:13px;font-weight:500;width:100%;padding-bottom:2px"
-          placeholder="Nom de l'article">
+        <input type="text" value="${item.nom}" data-idx="${i}" data-field="nom" placeholder="Nom de l'article">
       </div>
       <div style="display:flex;align-items:center;gap:6px;flex-shrink:0">
         <div style="text-align:center">
-          <input type="number" value="${item.quantite}" data-idx="${i}" data-field="quantite" min="1"
-            style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);border-radius:6px;color:white;font-size:12px;padding:4px 6px;width:52px;text-align:center;outline:none">
+          <input type="number" value="${item.quantite}" data-idx="${i}" data-field="quantite" min="1" style="text-align:center">
           <div style="font-size:9px;color:rgba(255,255,255,0.3);margin-top:2px">unités</div>
         </div>
         <div style="text-align:center">
-          <input type="number" value="${item.prixTotal}" data-idx="${i}" data-field="prixTotal" step="0.01" min="0"
-            style="background:rgba(52,211,153,0.06);border:1px solid rgba(52,211,153,0.15);border-radius:6px;color:#34d399;font-size:12px;padding:4px 6px;width:62px;text-align:center;outline:none">
-          <div style="font-size:9px;color:rgba(255,255,255,0.3);margin-top:2px">€ total</div>
+          <input type="number" value="${item.prixTotal}" data-idx="${i}" data-field="prixTotal" step="0.01" min="0" class="ai-price-input" style="text-align:center">
+          <div style="font-size:9px;color:rgba(52,211,153,0.6);margin-top:2px">€ total</div>
         </div>
       </div>`;
     list.appendChild(div);
@@ -1012,7 +1009,16 @@ function startApp(){
   const si=document.getElementById('order-search');if(si){let t=null;si.addEventListener('input',e=>{orderSearchQuery=e.target.value;clearTimeout(t);t=setTimeout(renderOrders,120);});}
   // Import facture IA
   const btnImportInvoice = document.getElementById('btn-import-invoice');
-  if (btnImportInvoice) btnImportInvoice.addEventListener('click', () => {
+  if (btnImportInvoice) btnImportInvoice.addEventListener('click', (e) => {
+    // Ripple effect
+    const ripple = document.createElement('span');
+    ripple.className = 'ripple';
+    const rect = btnImportInvoice.getBoundingClientRect();
+    ripple.style.left = (e.clientX - rect.left) + 'px';
+    ripple.style.top = (e.clientY - rect.top) + 'px';
+    btnImportInvoice.appendChild(ripple);
+    setTimeout(() => ripple.remove(), 600);
+    // Open modal
     resetImportModal();
     showModal(document.getElementById('import-invoice-modal'));
     if (window.lucide) lucide.createIcons();
@@ -1027,12 +1033,10 @@ function startApp(){
   // Drag & drop sur la zone upload
   const uploadZone = document.getElementById('import-upload-zone');
   if (uploadZone) {
-    uploadZone.addEventListener('dragover', e => { e.preventDefault(); uploadZone.style.borderColor = 'rgba(52,211,153,0.4)'; uploadZone.style.background = 'rgba(52,211,153,0.04)'; });
-    uploadZone.addEventListener('dragleave', () => { uploadZone.style.borderColor = ''; uploadZone.style.background = ''; });
+    uploadZone.addEventListener('dragover', e => { e.preventDefault(); uploadZone.classList.add('drag-active'); });
+    uploadZone.addEventListener('dragleave', () => uploadZone.classList.remove('drag-active'));
     uploadZone.addEventListener('drop', e => {
-      e.preventDefault();
-      uploadZone.style.borderColor = '';
-      uploadZone.style.background = '';
+      e.preventDefault(); uploadZone.classList.remove('drag-active');
       const f = e.dataTransfer.files[0];
       if (f) analyzeInvoice(f);
     });
