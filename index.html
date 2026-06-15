@@ -1,0 +1,1057 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>DropControl</title>
+  <!-- PWA — Installation iPhone / Android -->
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#0d0d10">
+  <!-- iOS Safari spécifique -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="DropControl">
+  <link rel="apple-touch-icon" href="apple-touch-icon.png">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@200;300;400;500;600&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/lucide@0.263.0/dist/umd/lucide.min.js"></script>
+  <style>
+    :root {
+      --bg:#0d0d10; --bg-soft:#131318; --panel:#1b1b20; --panel-hover:#212128;
+      --border:rgba(255,255,255,0.07); --border-strong:rgba(255,255,255,0.12);
+      --accent:#34d399; --danger:#f87171; --warn:#fbbf24; --info:#60a5fa;
+    }
+    * { font-family:'DM Sans',-apple-system,sans-serif; }
+    body { background:radial-gradient(1200px 600px at 80% -10%,var(--bg-soft),transparent 60%),var(--bg); background-attachment:fixed; }
+
+    .glass-sidebar { background:rgba(18,18,22,0.85); backdrop-filter:blur(32px) saturate(1.6); border-right:1px solid var(--border); box-shadow:inset 0 1px 0 rgba(255,255,255,0.04); }
+    .glass-header  { background:rgba(13,13,16,0.6); backdrop-filter:blur(20px); border-bottom:1px solid var(--border); }
+    .metric-card   { background:var(--panel); border:1px solid var(--border); box-shadow:0 6px 24px rgba(0,0,0,0.45),inset 0 1px 0 rgba(255,255,255,0.04); transition:all 0.3s cubic-bezier(0.4,0,0.2,1); position:relative; overflow:hidden; }
+    .metric-card:hover { background:var(--panel-hover); border-color:var(--border-strong); transform:translateY(-2px); box-shadow:0 14px 40px rgba(0,0,0,0.55),inset 0 1px 0 rgba(255,255,255,0.06); }
+    .metric-card::before { content:''; position:absolute; top:-40%; right:-20%; width:160px; height:160px; border-radius:50%; background:radial-gradient(circle,rgba(52,211,153,0.12),transparent 70%); opacity:0; transition:opacity 0.4s; pointer-events:none; }
+    .metric-card:hover::before { opacity:1; }
+    @keyframes kpi-flash { 0%{box-shadow:0 0 0 0 rgba(52,211,153,0.4)} 60%{box-shadow:0 0 0 8px rgba(52,211,153,0)} 100%{box-shadow:none} }
+    .metric-card.flash { animation:kpi-flash 0.55s ease-out; }
+
+    .panel-glass { background:var(--panel); border:1px solid var(--border); box-shadow:0 6px 24px rgba(0,0,0,0.4),inset 0 1px 0 rgba(255,255,255,0.03); }
+    .hidden { display:none!important; }
+
+    .nav-item { position:relative; transition:all 0.25s cubic-bezier(0.4,0,0.2,1); border-radius:10px; cursor:pointer; overflow:hidden; }
+    .nav-item::before { content:''; position:absolute; left:0; top:50%; transform:translateY(-50%) scaleY(0); width:3px; height:60%; border-radius:0 3px 3px 0; background:var(--accent); transition:transform 0.25s cubic-bezier(0.3,0.9,0.3,1.2); }
+    .nav-item:hover { background:rgba(255,255,255,0.06); padding-left:16px; opacity:1!important; }
+    .nav-item:hover::before { transform:translateY(-50%) scaleY(0.5); }
+    .nav-item.active { background:rgba(52,211,153,0.1); color:white; opacity:1!important; box-shadow:inset 0 0 0 1px rgba(52,211,153,0.15),0 0 20px rgba(52,211,153,0.06); }
+    .nav-item.active::before { transform:translateY(-50%) scaleY(1); }
+    .nav-item:active { transform:scale(0.98); }
+    @keyframes nav-pulse { 0%{box-shadow:inset 0 0 0 1px rgba(52,211,153,0.4)} 100%{box-shadow:inset 0 0 0 1px rgba(52,211,153,0.15),0 0 20px rgba(52,211,153,0.06)} }
+    .nav-item.just-clicked { animation:nav-pulse 0.5s ease-out; }
+
+    .view-enter { animation:view-in 0.22s cubic-bezier(0.2,0.9,0.3,1) both; }
+    @keyframes view-in { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:none} }
+
+    #toast-container { position:fixed; bottom:24px; right:24px; z-index:100; display:flex; flex-direction:column; gap:10px; pointer-events:none; }
+    .toast { min-width:240px; max-width:360px; background:var(--panel-hover); border:1px solid var(--border-strong); border-left:3px solid var(--accent); border-radius:12px; padding:12px 16px; color:#f3f4f6; font-size:13px; font-weight:500; box-shadow:0 10px 40px rgba(0,0,0,0.5); display:flex; align-items:center; gap:10px; transform:translateX(120%); opacity:0; transition:transform 0.35s cubic-bezier(0.2,0.9,0.3,1),opacity 0.35s; pointer-events:auto; }
+    .toast.show { transform:translateX(0); opacity:1; }
+    .toast.toast-success { border-left-color:var(--accent); }
+    .toast.toast-error   { border-left-color:var(--danger); }
+    .toast.toast-warn    { border-left-color:var(--warn); }
+    .toast-icon { font-size:15px; line-height:1; flex-shrink:0; }
+
+    .status-badge { display:inline-flex; align-items:center; gap:5px; padding:3px 10px; border-radius:20px; font-size:11px; font-weight:600; cursor:pointer; border:1px solid transparent; transition:all 0.18s; user-select:none; white-space:nowrap; }
+    .status-badge::before { content:''; width:6px; height:6px; border-radius:50%; }
+    .status-encours { background:rgba(251,191,36,0.12); color:var(--warn);   border-color:rgba(251,191,36,0.25); }
+    .status-encours::before { background:var(--warn); }
+    .status-expedie { background:rgba(96,165,250,0.12); color:var(--info);   border-color:rgba(96,165,250,0.25); }
+    .status-expedie::before { background:var(--info); }
+    .status-livre   { background:rgba(52,211,153,0.12); color:var(--accent); border-color:rgba(52,211,153,0.25); }
+    .status-livre::before { background:var(--accent); }
+    .status-badge:hover { filter:brightness(1.25); }
+
+    .goal-bar-track { width:100%; height:6px; border-radius:99px; background:rgba(255,255,255,0.07); overflow:hidden; margin-top:10px; }
+    .goal-bar-fill  { height:100%; border-radius:99px; background:linear-gradient(90deg,var(--accent),#6ee7b7); transition:width 0.6s cubic-bezier(0.3,0.9,0.3,1); }
+    .goal-bar-fill.over { background:linear-gradient(90deg,var(--warn),var(--accent)); }
+
+    .search-box { position:relative; display:inline-flex; align-items:center; }
+    .search-box i,.search-box svg { position:absolute; left:12px; top:50%; transform:translateY(-50%); width:16px; height:16px; color:rgba(255,255,255,0.4); pointer-events:none; transition:color 0.2s; }
+    .search-input { background:rgba(255,255,255,0.04); border:1px solid var(--border); border-radius:10px; padding:8px 14px 8px 38px; color:white; font-size:13px; outline:none; width:230px; transition:width 0.25s cubic-bezier(0.3,0.9,0.3,1),border-color 0.2s,background 0.2s,box-shadow 0.2s; }
+    .search-box:hover .search-input { border-color:var(--border-strong); background:rgba(255,255,255,0.06); }
+    .search-input:focus { border-color:rgba(52,211,153,0.5); background:rgba(255,255,255,0.07); box-shadow:0 0 0 3px rgba(52,211,153,0.12); width:280px; }
+    .search-input::placeholder { color:rgba(255,255,255,0.3); }
+
+    .stock-badge { display:inline-flex; align-items:center; justify-content:center; min-width:18px; height:18px; padding:0 5px; border-radius:9px; background:#ef4444; color:white; font-size:10px; font-weight:600; animation:badge-pulse 1.6s ease-in-out infinite; margin-left:auto; }
+    @keyframes badge-pulse { 0%,100%{box-shadow:0 0 0 0 rgba(239,68,68,0.7);opacity:1} 50%{box-shadow:0 0 0 5px rgba(239,68,68,0);opacity:0.85} }
+
+    .top-bar-track { background:rgba(255,255,255,0.06); border-radius:4px; height:6px; flex:1; overflow:hidden; }
+    .top-bar-fill  { height:100%; border-radius:4px; background:rgba(52,211,153,0.8); transition:width 0.4s ease; }
+
+    .calculator-input { background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.08); border-radius:12px; padding:10px 14px; color:white; outline:none; transition:all 0.2s; width:100%; }
+    .calculator-input:focus { border-color:rgba(255,255,255,0.2); background:rgba(255,255,255,0.06); }
+    select.calculator-input option { background:#1a1a1a; color:white; }
+
+    /* LOCK */
+    #lock-screen { background:radial-gradient(1000px 500px at 50% -10%,rgba(52,211,153,0.08),transparent 60%),var(--bg); }
+    .lock-card { width:100%; max-width:360px; margin:0 20px; background:var(--panel); border:1px solid var(--border-strong); border-radius:22px; padding:36px 30px; display:flex; flex-direction:column; align-items:center; box-shadow:0 24px 70px rgba(0,0,0,0.6),inset 0 1px 0 rgba(255,255,255,0.05); animation:lock-pop 0.4s cubic-bezier(0.2,0.9,0.3,1.1); }
+    @keyframes lock-pop { from{opacity:0;transform:translateY(12px) scale(0.97)} to{opacity:1;transform:none} }
+    .lock-logo { width:56px; height:56px; border-radius:16px; margin-bottom:18px; display:flex; align-items:center; justify-content:center; background:linear-gradient(135deg,rgba(52,211,153,0.2),rgba(52,211,153,0.05)); border:1px solid rgba(52,211,153,0.3); color:var(--accent); }
+    .lock-input { width:100%; background:rgba(255,255,255,0.05); border:1px solid var(--border); border-radius:12px; padding:12px 15px; color:white; font-size:14px; outline:none; transition:border-color 0.2s,box-shadow 0.2s,background 0.2s; }
+    .lock-input:focus { border-color:rgba(52,211,153,0.5); background:rgba(255,255,255,0.08); box-shadow:0 0 0 3px rgba(52,211,153,0.12); }
+    .lock-btn { width:100%; padding:12px; border-radius:12px; border:none; cursor:pointer; background:var(--accent); color:#06281c; font-size:14px; font-weight:700; transition:filter 0.18s,transform 0.1s; }
+    .lock-btn:hover { filter:brightness(1.08); }
+    .lock-btn:active { transform:scale(0.97); }
+    .lock-shake { animation:lock-shake 0.4s; }
+    @keyframes lock-shake { 0%,100%{transform:translateX(0)} 20%,60%{transform:translateX(-8px)} 40%,80%{transform:translateX(8px)} }
+
+    button:active { transform:scale(0.97); }
+    button { transition:transform 0.08s ease,filter 0.18s ease,background 0.18s ease,border-color 0.18s ease,color 0.18s ease; }
+    .btn-primary { position:relative; overflow:hidden; }
+    .btn-primary::after { content:''; position:absolute; inset:0; background:radial-gradient(circle at center,rgba(255,255,255,0.35),transparent 60%); opacity:0; transform:scale(0.4); transition:opacity 0.5s,transform 0.5s; pointer-events:none; }
+    .btn-primary:active::after { opacity:1; transform:scale(1); transition:0s; }
+    main { max-width:calc(100% - 16rem); overflow-x:hidden; }
+
+    /* DATE CHIP */
+    .date-chip { display:inline-flex; align-items:center; gap:10px; background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.07); border-radius:14px; padding:8px 14px 8px 12px; transition:border-color 0.2s,background 0.2s; }
+    .date-chip:hover { background:rgba(255,255,255,0.05); border-color:rgba(255,255,255,0.12); }
+    .date-chip-icon { width:32px; height:32px; border-radius:9px; background:rgba(52,211,153,0.1); border:1px solid rgba(52,211,153,0.2); display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+    .date-chip-date { font-size:13px; font-weight:500; color:rgba(255,255,255,0.85); line-height:1.2; text-transform:capitalize; }
+    .date-chip-time { font-size:11px; color:rgba(255,255,255,0.3); margin-top:1px; font-variant-numeric:tabular-nums; }
+
+    /* INVENTAIRE GRID */
+    .inv-grid-head,.inv-grid-row { display:grid; grid-template-columns:2.4fr 1.2fr 0.8fr 0.8fr 1fr 44px; align-items:center; gap:8px; }
+    .inv-grid-head { padding:0 14px 10px; border-bottom:1px solid rgba(255,255,255,0.08); font-size:10.5px; text-transform:uppercase; letter-spacing:0.08em; color:rgba(255,255,255,0.32); font-weight:600; }
+    .inv-grid-head>div:nth-child(3),.inv-grid-head>div:nth-child(4) { text-align:center; }
+    .inv-grid-head>div:nth-child(5) { text-align:right; }
+    .inv-grid-row { padding:11px 14px; border-radius:11px; border:1px solid transparent; position:relative; transition:background 0.18s,border-color 0.18s,transform 0.1s; animation:inv-in 0.3s cubic-bezier(0.2,0.9,0.3,1) both; }
+    @keyframes inv-in { from{opacity:0;transform:translateY(5px)} to{opacity:1;transform:none} }
+    .inv-grid-row::before { content:''; position:absolute; left:0; top:50%; transform:translateY(-50%) scaleY(0); width:3px; height:55%; border-radius:0 3px 3px 0; background:var(--accent); transition:transform 0.2s cubic-bezier(0.3,0.9,0.3,1.2); }
+    .inv-grid-row:hover { background:rgba(255,255,255,0.033); border-color:rgba(255,255,255,0.07); }
+    .inv-grid-row:hover::before { transform:translateY(-50%) scaleY(1); }
+    .inv-grid-row:not(:last-child) { box-shadow:inset 0 -1px 0 rgba(255,255,255,0.045); }
+    .inv-grid-row.row-low { background:rgba(248,113,113,0.04); border-color:rgba(248,113,113,0.1)!important; }
+    .inv-grid-row.row-low::before { background:var(--danger); }
+    .inv-grid-row.row-low:hover { background:rgba(248,113,113,0.07); }
+    .inv-name-cell { display:flex; align-items:center; gap:10px; min-width:0; overflow:hidden; }
+    .inv-avatar { width:32px; height:32px; border-radius:9px; flex-shrink:0; display:flex; align-items:center; justify-content:center; font-size:11.5px; font-weight:800; text-transform:uppercase; background:rgba(52,211,153,0.1); border:1px solid rgba(52,211,153,0.2); color:var(--accent); transition:all 0.18s; }
+    .inv-grid-row:hover .inv-avatar { background:rgba(52,211,153,0.16); border-color:rgba(52,211,153,0.35); }
+    .inv-grid-row.row-low .inv-avatar { background:rgba(248,113,113,0.12); border-color:rgba(248,113,113,0.25); color:var(--danger); }
+    .inv-name-txt { font-size:13.5px; font-weight:600; color:#f3f4f6; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .inv-cell   { font-size:13px; color:rgba(255,255,255,0.55); }
+    .inv-cell-c { font-size:13px; color:rgba(255,255,255,0.55); text-align:center; }
+    .inv-cell-r { font-size:13px; color:rgba(255,255,255,0.55); text-align:right; }
+    .inv-stock  { font-size:15px; font-weight:700; text-align:center; }
+    .inv-stock.ok  { color:#e5e7eb; }
+    .inv-stock.low { color:var(--danger); }
+    .inv-del { opacity:0; display:inline-flex; align-items:center; justify-content:center; width:30px; height:30px; border-radius:8px; border:none; cursor:pointer; background:transparent; color:rgba(248,113,113,0.5); transition:all 0.15s; }
+    .inv-grid-row:hover .inv-del { opacity:1; }
+    .inv-del:hover { background:rgba(248,113,113,0.12); color:var(--danger); transform:scale(1.1); }
+    .inv-empty { padding:36px 0; text-align:center; color:rgba(255,255,255,0.28); font-style:italic; font-size:14px; }
+
+    /* ORDERS GRID */
+    .orders-head,.order-row { display:grid; grid-template-columns:2fr 2fr 1.2fr 1.4fr 1.1fr; align-items:center; gap:16px; width:100%; box-sizing:border-box; }
+    .orders-head { padding:0 14px 12px; border-bottom:1px solid rgba(255,255,255,0.1); font-size:10.5px; text-transform:uppercase; letter-spacing:0.08em; color:rgba(255,255,255,0.32); font-weight:600; }
+    .orders-head>span:last-child { text-align:right; }
+    .orders-list { display:flex; flex-direction:column; }
+    .order-row { padding:12px 14px; border-radius:12px; border:1px solid transparent; position:relative; transition:background 0.2s,border-color 0.2s,transform 0.1s; animation:order-in 0.32s cubic-bezier(0.2,0.9,0.3,1) both; }
+    @keyframes order-in { from{opacity:0;transform:translateY(6px)} to{opacity:1;transform:none} }
+    .order-row::before { content:''; position:absolute; left:0; top:50%; transform:translateY(-50%) scaleY(0); width:3px; height:60%; border-radius:0 3px 3px 0; background:var(--accent); transition:transform 0.2s cubic-bezier(0.3,0.9,0.3,1.2); }
+    .order-row:not(:last-child) { box-shadow:inset 0 -1px 0 rgba(255,255,255,0.05); }
+    .order-row:hover { background:rgba(255,255,255,0.033); border-color:rgba(255,255,255,0.07); }
+    .order-row:hover::before { transform:translateY(-50%) scaleY(1); }
+    .order-client-wrap { display:flex; align-items:center; gap:10px; min-width:0; overflow:hidden; }
+    .order-avatar { width:34px; height:34px; border-radius:10px; flex-shrink:0; display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:800; text-transform:uppercase; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.09); color:rgba(255,255,255,0.6); transition:all 0.18s; }
+    .order-row:hover .order-avatar { background:rgba(52,211,153,0.1); border-color:rgba(52,211,153,0.22); color:var(--accent); }
+    .order-client-info { min-width:0; overflow:hidden; }
+    .order-customer-name { font-size:13.5px; font-weight:600; color:#fff; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; cursor:pointer; border-radius:5px; padding:1px 4px; margin:-1px -4px; transition:background 0.15s; }
+    .order-customer-name:hover { background:rgba(52,211,153,0.1); }
+    .order-date { font-size:11px; color:rgba(255,255,255,0.32); margin-top:2px; cursor:pointer; border-radius:4px; padding:1px 4px; margin-left:-4px; transition:background 0.15s,color 0.15s; display:inline-block; }
+    .order-date:hover { background:rgba(96,165,250,0.12); color:var(--info); }
+    .order-article-wrap { display:flex; align-items:center; gap:8px; min-width:0; overflow:hidden; }
+    .order-article-name { font-size:13px; font-weight:500; color:rgba(255,255,255,0.78); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; flex-shrink:1; min-width:0; }
+    .qty-pill { display:inline-flex; align-items:center; justify-content:center; padding:2px 7px; border-radius:6px; flex-shrink:0; font-size:10.5px; font-weight:700; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.1); color:rgba(255,255,255,0.45); cursor:pointer; transition:all 0.15s; }
+    .qty-pill:hover { background:rgba(52,211,153,0.1); border-color:rgba(52,211,153,0.25); color:var(--accent); }
+    .order-amount { font-size:14.5px; font-weight:700; color:#fff; cursor:pointer; border-radius:6px; padding:2px 5px; margin:-2px -5px; transition:background 0.15s; display:inline-block; }
+    .order-amount:hover { background:rgba(52,211,153,0.1); }
+    .order-del { display:inline-flex; align-items:center; gap:5px; padding:5px 11px; border-radius:8px; cursor:pointer; font-size:11.5px; font-weight:600; white-space:nowrap; color:rgba(248,113,113,0.8); background:rgba(248,113,113,0.07); border:1px solid rgba(248,113,113,0.18); transition:all 0.18s; justify-self:end; }
+    .order-del:hover { color:#fff; background:var(--danger); border-color:var(--danger); box-shadow:0 4px 14px rgba(248,113,113,0.28); }
+    .orders-empty { padding:40px 0; text-align:center; color:rgba(255,255,255,0.28); font-style:italic; font-size:14px; }
+
+    /* ══════════════════════════════════════════
+       CATALOGUE PRODUITS — CSS Grid (comme orders)
+    ══════════════════════════════════════════ */
+    /* Colonnes : Nom | Coût | Prix | Marge | Profit | Lot | Del */
+    .cat-grid-head,
+    .cat-grid-row {
+      display: grid;
+      grid-template-columns: 2.2fr 1fr 1fr 0.8fr 1.1fr 70px 40px;
+      align-items: center;
+      gap: 10px;
+    }
+    .cat-grid-head {
+      padding: 0 14px 11px;
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+      font-size: 10.5px; text-transform: uppercase;
+      letter-spacing: 0.08em; color: rgba(255,255,255,0.32); font-weight: 600;
+    }
+    .cat-grid-head > div:nth-child(3),
+    .cat-grid-head > div:nth-child(4),
+    .cat-grid-head > div:nth-child(5) { text-align: right; }
+    .cat-grid-head > div:nth-child(6) { text-align: center; }
+
+    .cat-grid-row {
+      padding: 12px 14px; border-radius: 11px;
+      border: 1px solid transparent; position: relative;
+      transition: background 0.18s, border-color 0.18s, transform 0.1s;
+      animation: inv-in 0.3s cubic-bezier(0.2,0.9,0.3,1) both;
+    }
+    .cat-grid-row::before {
+      content: ''; position: absolute; left: 0; top: 50%;
+      transform: translateY(-50%) scaleY(0); width: 3px; height: 55%;
+      border-radius: 0 3px 3px 0; background: var(--accent);
+      transition: transform 0.2s cubic-bezier(0.3,0.9,0.3,1.2);
+    }
+    .cat-grid-row:hover { background: rgba(255,255,255,0.033); border-color: rgba(255,255,255,0.07); }
+    .cat-grid-row:hover::before { transform: translateY(-50%) scaleY(1); }
+    .cat-grid-row:not(:last-child) { box-shadow: inset 0 -1px 0 rgba(255,255,255,0.045); }
+    .cat-grid-row:active { transform: scale(0.998); }
+
+    /* Name cell */
+    .cat-name-cell { display:flex; align-items:center; gap:10px; min-width:0; overflow:hidden; }
+    .cat-avatar {
+      width: 32px; height: 32px; border-radius: 9px; flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 11px; font-weight: 800; text-transform: uppercase;
+      background: rgba(96,165,250,0.1); border: 1px solid rgba(96,165,250,0.2);
+      color: var(--info); transition: all 0.18s;
+    }
+    .cat-grid-row:hover .cat-avatar { background: rgba(96,165,250,0.16); border-color: rgba(96,165,250,0.35); }
+    .cat-name-txt { font-size: 13.5px; font-weight: 600; color: #f3f4f6; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+    /* Data cells */
+    .cat-cell   { font-size: 13px; color: rgba(255,255,255,0.55); }
+    .cat-cell-r { font-size: 13px; color: rgba(255,255,255,0.55); text-align: right; }
+    .cat-margin { font-size: 13px; font-weight: 600; text-align: right; }
+    .cat-profit { font-size: 14px; font-weight: 700; text-align: right; }
+
+    /* Lot button */
+    .cat-lot-btn {
+      display: inline-flex; align-items: center; justify-content: center; gap: 4px;
+      padding: 5px 10px; border-radius: 8px; cursor: pointer; white-space: nowrap;
+      font-size: 11px; font-weight: 700; letter-spacing: 0.02em;
+      background: rgba(52,211,153,0.08); color: var(--accent);
+      border: 1px solid rgba(52,211,153,0.2); transition: all 0.18s;
+    }
+    .cat-lot-btn:hover { background: rgba(52,211,153,0.18); border-color: rgba(52,211,153,0.4); box-shadow: 0 0 12px rgba(52,211,153,0.15); }
+    .cat-lot-btn.active { background: rgba(52,211,153,0.2); border-color: var(--accent); color: white; }
+
+    /* Delete button — visible on hover */
+    .cat-del {
+      opacity: 0; display: inline-flex; align-items: center; justify-content: center;
+      width: 30px; height: 30px; border-radius: 8px; border: none; cursor: pointer;
+      background: transparent; color: rgba(248,113,113,0.5); transition: all 0.15s;
+    }
+    .cat-grid-row:hover .cat-del { opacity: 1; }
+    .cat-del:hover { background: rgba(248,113,113,0.12); color: var(--danger); transform: scale(1.1); }
+
+    .cat-empty { padding: 36px 0; text-align: center; color: rgba(255,255,255,0.28); font-style: italic; font-size: 14px; }
+
+    /* ══════════════════════════════════════════
+       LOT PANEL — calculateur flottant par produit
+    ══════════════════════════════════════════ */
+    .lot-panel {
+      position: fixed; z-index: 700; width: 300px;
+      background: #1a1a24;
+      border: 1px solid rgba(52,211,153,0.35);
+      border-radius: 16px; overflow: hidden;
+      box-shadow: 0 24px 64px rgba(0,0,0,0.65), 0 0 0 1px rgba(52,211,153,0.08);
+      animation: lot-in 0.16s cubic-bezier(0.2,0.9,0.3,1);
+    }
+    @keyframes lot-in { from{opacity:0;transform:translateY(-6px) scale(0.97)} to{opacity:1;transform:none} }
+    .lot-panel-header {
+      display: flex; align-items: center; gap: 8px;
+      padding: 12px 14px;
+      border-bottom: 1px solid rgba(255,255,255,0.07);
+      background: rgba(52,211,153,0.05);
+    }
+    .lot-panel-icon {
+      width: 26px; height: 26px; border-radius: 7px; flex-shrink: 0;
+      background: rgba(52,211,153,0.12); border: 1px solid rgba(52,211,153,0.2);
+      display: flex; align-items: center; justify-content: center; color: var(--accent);
+    }
+    .lot-panel-title { font-size: 12px; font-weight: 700; color: white; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .lot-panel-close { display: flex; align-items: center; justify-content: center; width: 22px; height: 22px; border-radius: 6px; border: none; cursor: pointer; background: rgba(255,255,255,0.05); color: rgba(255,255,255,0.4); transition: all 0.15s; flex-shrink: 0; font-size: 14px; line-height: 1; }
+    .lot-panel-close:hover { background: rgba(255,255,255,0.1); color: white; }
+    .lot-panel-body { padding: 14px; display: flex; flex-direction: column; gap: 12px; }
+    .lot-qty-row { display: flex; align-items: center; gap: 8px; }
+    .lot-qty-label { font-size: 11px; color: rgba(255,255,255,0.35); text-transform: uppercase; letter-spacing: 0.07em; font-weight: 600; flex-shrink: 0; }
+    .lot-qty-input {
+      flex: 1; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 9px; padding: 7px 12px; color: white; font-size: 14px; font-weight: 600;
+      font-family: 'DM Sans',sans-serif; outline: none; transition: all 0.15s; text-align: center;
+    }
+    .lot-qty-input:focus { border-color: rgba(52,211,153,0.5); background: rgba(52,211,153,0.05); box-shadow: 0 0 0 2px rgba(52,211,153,0.12); }
+    .lot-results { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
+    .lot-result-cell {
+      background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06);
+      border-radius: 10px; padding: 10px 10px 8px;
+    }
+    .lot-result-label { font-size: 9.5px; color: rgba(255,255,255,0.35); text-transform: uppercase; letter-spacing: 0.06em; font-weight: 600; margin-bottom: 5px; }
+    .lot-result-value { font-size: 15px; font-weight: 800; color: white; }
+    .lot-result-cell.profit-cell { background: rgba(52,211,153,0.05); border-color: rgba(52,211,153,0.1); }
+    .lot-result-cell.revenue-cell { background: rgba(96,165,250,0.05); border-color: rgba(96,165,250,0.1); }
+    .lot-per-unit { display: flex; justify-content: space-between; align-items: center; padding: 8px 10px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.05); border-radius: 8px; }
+    .lot-per-unit-label { font-size: 11px; color: rgba(255,255,255,0.35); }
+    .lot-per-unit-value { font-size: 12px; font-weight: 600; color: rgba(255,255,255,0.6); }
+
+    /* FLOATING EDIT */
+    .floating-edit-panel { position:fixed; z-index:800; display:flex; flex-direction:column; gap:5px; filter:drop-shadow(0 16px 48px rgba(0,0,0,0.65)); animation:fep-in 0.14s cubic-bezier(0.2,0.9,0.3,1); pointer-events:auto; }
+    @keyframes fep-in { from{opacity:0;transform:translateY(-5px) scale(0.97)} to{opacity:1;transform:none} }
+    .floating-edit-input { background:#1e1e27; border:1px solid rgba(52,211,153,0.55); border-radius:10px; color:white; font-family:'DM Sans',sans-serif; font-size:14px; font-weight:500; padding:8px 13px; outline:none; box-sizing:border-box; box-shadow:0 0 0 3px rgba(52,211,153,0.12),0 4px 24px rgba(0,0,0,0.4); }
+    .floating-edit-input:focus { border-color:var(--accent); box-shadow:0 0 0 3px rgba(52,211,153,0.2),0 4px 24px rgba(0,0,0,0.4); }
+    .floating-edit-hint { font-size:10px; color:rgba(255,255,255,0.22); text-align:center; letter-spacing:0.02em; }
+
+    /* SIMULATOR BATCH */
+    @keyframes sim-flash { 0%{opacity:0.6} to{opacity:1} }
+    .sim-flash { animation:sim-flash 0.3s ease-out; }
+    .batch-card { background:linear-gradient(135deg,rgba(52,211,153,0.06),rgba(52,211,153,0.02)); border:1px solid rgba(52,211,153,0.15); border-radius:18px; padding:20px; transition:all 0.3s cubic-bezier(0.3,0.9,0.3,1); }
+    .batch-card:hover { background:linear-gradient(135deg,rgba(52,211,153,0.09),rgba(52,211,153,0.04)); border-color:rgba(52,211,153,0.25); }
+
+    /* KBD */
+    .kbd { display:inline-flex; align-items:center; justify-content:center; min-width:22px; height:20px; padding:0 5px; background:rgba(255,255,255,0.07); border:1px solid rgba(255,255,255,0.15); border-bottom-width:2px; border-radius:5px; font-size:10.5px; font-weight:700; color:rgba(255,255,255,0.65); font-family:'DM Sans',monospace; white-space:nowrap; flex-shrink:0; }
+
+    /* SHORTCUTS OVERLAY */
+    #shortcuts-overlay { position:fixed; inset:0; background:rgba(0,0,0,0.65); backdrop-filter:blur(16px); z-index:500; display:flex; align-items:center; justify-content:center; padding:24px; }
+    .shortcuts-panel { background:var(--panel); border:1px solid var(--border-strong); border-radius:22px; width:100%; max-width:520px; box-shadow:0 32px 80px rgba(0,0,0,0.6),inset 0 1px 0 rgba(255,255,255,0.05); animation:lock-pop 0.25s cubic-bezier(0.2,0.9,0.3,1.1); overflow:hidden; }
+    .shortcut-row { display:flex; align-items:center; justify-content:space-between; padding:10px 20px; border-bottom:1px solid rgba(255,255,255,0.05); transition:background 0.15s; }
+    .shortcut-row:last-child { border-bottom:none; }
+    .shortcut-row:hover { background:rgba(255,255,255,0.03); }
+    .shortcut-desc { font-size:13px; color:rgba(255,255,255,0.7); }
+    .shortcut-keys { display:flex; align-items:center; gap:4px; }
+    .shortcut-sep { font-size:10px; color:rgba(255,255,255,0.2); }
+    .shortcut-hint-btn { display:flex; align-items:center; gap:6px; padding:8px 10px; border-radius:9px; font-size:11px; color:rgba(255,255,255,0.3); transition:all 0.18s; cursor:pointer; width:100%; }
+    .shortcut-hint-btn:hover { background:rgba(255,255,255,0.05); color:rgba(255,255,255,0.6); }
+
+    /* ══════════════════════════════════════════════
+       BOTTOM NAV — mobile uniquement
+    ══════════════════════════════════════════════ */
+    .bottom-nav {
+      display: none;
+      position: fixed; bottom: 0; left: 0; right: 0;
+      height: 62px;
+      background: rgba(13,13,16,0.96);
+      backdrop-filter: blur(24px) saturate(1.5);
+      border-top: 1px solid var(--border);
+      z-index: 100; /* sous les modals */
+      justify-content: space-around; align-items: center;
+      padding-bottom: env(safe-area-inset-bottom, 0px);
+      transition: transform 0.25s cubic-bezier(0.4,0,0.2,1);
+    }
+    .bnav-item {
+      display: flex; flex-direction: column; align-items: center; gap: 3px;
+      padding: 6px 20px; border: none; background: transparent;
+      color: rgba(255,255,255,0.35); font-size: 10px; font-weight: 600;
+      cursor: pointer; border-radius: 14px; transition: all 0.18s;
+      letter-spacing: 0.01em; flex: 1;
+    }
+    .bnav-item svg { width: 21px; height: 21px; }
+    .bnav-item.active { color: var(--accent); }
+    .bnav-item.active svg { filter: drop-shadow(0 0 6px rgba(52,211,153,0.5)); }
+    .bnav-item:active { transform: scale(0.88); }
+    .bnav-badge {
+      position: absolute; top: -3px; right: 12px;
+      min-width: 16px; height: 16px; padding: 0 4px;
+      background: var(--danger); border-radius: 8px;
+      font-size: 9px; font-weight: 700; color: white;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .bnav-icon { position: relative; }
+
+    /* ── Modals au-dessus de la bottom nav ── */
+    #settings-modal, #delete-modal, #reappro-modal,
+    #shortcuts-overlay, #app-loader, #lock-screen {
+      z-index: 400 !important;
+    }
+
+    /* ── Toast au-dessus de TOUT (modals inclus) ── */
+    #toast-container { z-index: 600 !important; }
+
+    /* ── Valeurs adaptatives — ne débordent jamais ── */
+    .metric-card p { overflow-wrap: break-word; word-break: break-all; min-width: 0; }
+    #out-net-profit, #out-total-cost, #out-margin-rate,
+    #out-be-roas, #out-fees { overflow-wrap: break-word; word-break: break-all; }
+    .lot-result-value { overflow-wrap: break-word; word-break: break-all; }
+    .order-amount, .cat-profit, .cat-margin { overflow-wrap: break-word; }
+    #dash-profit, #dash-revenue, #dash-roi, #dash-margin-rate {
+      font-size: clamp(15px, 3.2vw, 24px);
+      overflow-wrap: break-word; word-break: break-all;
+    }
+    /* Inventaire desktop */
+    .inv-cell, .inv-cell-r, .inv-cell-c, .inv-stock, .inv-name-txt {
+      overflow-wrap: break-word; word-break: break-all; min-width: 0;
+    }
+    /* Catalogue desktop */
+    .cat-cell, .cat-cell-r, .cat-profit, .cat-margin, .cat-name-txt {
+      overflow-wrap: break-word; word-break: break-all; min-width: 0;
+    }
+    /* Orders desktop */
+    .order-article-name, .order-customer-name, .order-amount {
+      overflow-wrap: break-word; word-break: break-all; min-width: 0;
+    }
+    /* Dashboard budget */
+    #dash-budget-display { overflow-wrap: break-word; word-break: break-all; }
+    /* Simulateur lot */
+    #batch-total-cost, #batch-profit, #batch-revenue {
+      overflow-wrap: break-word; word-break: break-all;
+    }
+
+    /* Top produits — valeur ne déborde jamais */
+    #top-products-container > div > span:last-child {
+      max-width: 90px; overflow: hidden; text-overflow: ellipsis;
+      white-space: nowrap; flex-shrink: 0;
+    }
+    /* Lot panel — valeurs lisibles, pas de cassure bizarre */
+    .lot-result-value {
+      overflow-wrap: normal !important;
+      word-break: normal !important;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      font-size: clamp(12px, 2.5vw, 15px);
+    }
+    /* Lot panel — décalé vers la gauche */
+    .lot-panel { margin-right: 8px; }
+    .lot-panel { overflow: hidden; }
+    .lot-panel-body {
+      overflow-y: auto; padding-right: 6px;
+      scrollbar-width: thin; scrollbar-color: rgba(255,255,255,0.1) transparent;
+    }
+    .lot-panel-body::-webkit-scrollbar { width: 4px; }
+    .lot-panel-body::-webkit-scrollbar-track { background: transparent; }
+    .lot-panel-body::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.12); border-radius: 4px; }
+
+    /* ── Bottom nav cachée quand modal ouverte ── */
+    body.modal-open .bottom-nav { transform: translateY(100%) !important; }
+
+    /* ── Bottom nav cachée quand clavier visible ── */
+    body.keyboard-open .bottom-nav { transform: translateY(100%) !important; }
+
+    /* Info mobile inventaire — cachée sur desktop */
+    .inv-mobile-info { display: none; }
+    /* Info mobile catalogue — cachée sur desktop */
+    .cat-mobile-info { display: none; }
+    .glass-header {
+      padding-top:    max(24px, env(safe-area-inset-top,    24px));
+      padding-left:   max(40px, env(safe-area-inset-left,   40px));
+      padding-right:  max(40px, env(safe-area-inset-right,  40px));
+    }
+    @media (max-width: 768px) {
+
+      /* ── Layout global ── */
+      .glass-sidebar { display: none !important; }
+      .bottom-nav    { display: flex !important; }
+
+      main {
+        margin-left: 0 !important;
+        width: 100% !important;
+        padding: 0 14px 80px !important;
+        max-width: 100% !important;
+        overflow-x: hidden;
+      }
+
+      /* ── Header ── */
+      .glass-header {
+        margin-left: 0 !important;
+        padding: 14px 16px !important;
+        margin-bottom: 16px !important;
+      }
+      #page-subtitle { display: none; }
+      #page-title    { font-size: 18px !important; }
+      .date-chip     { display: none; }
+
+      /* ── KPIs : 2 colonnes ── */
+      section.grid {
+        grid-template-columns: repeat(2, 1fr) !important;
+        gap: 10px !important;
+        margin-bottom: 16px !important;
+      }
+      .metric-card { padding: 14px !important; }
+      .metric-card .text-2xl { font-size: 20px !important; }
+      .metric-card .goal-bar-track { margin-top: 8px; }
+
+      /* ── Dashboard barre période ── */
+      .flex.items-center.justify-between.panel-glass.rounded-2xl.p-4 {
+        flex-direction: column !important;
+        align-items: stretch !important;
+        gap: 10px !important;
+        padding: 14px !important;
+      }
+      #dash-month-selector { width: 100% !important; }
+
+      /* ── Graphique + alertes : 1 colonne ── */
+      .grid.grid-cols-1.xl\\:grid-cols-3 {
+        grid-template-columns: 1fr !important;
+      }
+
+      /* ── Graphique : hauteur réduite ── */
+      svg#chart-svg { height: 130px !important; }
+
+      /* ── Top produits ── */
+      .top-bar-track { min-width: 40px; }
+
+      /* ── Todo list : 1 colonne ── */
+      #todo-list-container { grid-template-columns: 1fr !important; }
+
+      /* ── Safe areas mobiles / PWA ── */
+      .glass-header {
+        padding-top:   max(16px, env(safe-area-inset-top,   16px)) !important;
+        padding-left:  max(16px, env(safe-area-inset-left,  16px)) !important;
+        padding-right: max(16px, env(safe-area-inset-right, 16px)) !important;
+        padding-bottom: 14px !important;
+        margin-left:  0 !important;
+        margin-right: 0 !important;
+      }
+
+      /* Bottom nav : respecte l'indicateur home ── */
+      .bottom-nav {
+        height: calc(58px + env(safe-area-inset-bottom, 0px)) !important;
+        padding-bottom: env(safe-area-inset-bottom, 0px) !important;
+        padding-left:  env(safe-area-inset-left,  0px) !important;
+        padding-right: env(safe-area-inset-right, 0px) !important;
+      }
+
+      /* Toast : au-dessus de la bottom nav ── */
+      #toast-container {
+        bottom: calc(68px + env(safe-area-inset-bottom, 0px)) !important;
+        right:  max(16px, env(safe-area-inset-right, 16px)) !important;
+      }
+
+      /* Main : padding top pour le header ── */
+      main {
+        padding-top: 0 !important;
+        padding-left:  max(14px, env(safe-area-inset-left,  14px)) !important;
+        padding-right: max(14px, env(safe-area-inset-right, 14px)) !important;
+        padding-bottom: calc(80px + env(safe-area-inset-bottom, 0px)) !important;
+      }
+
+      /* Settings modal : bottom sheet avec safe area ── */
+      #settings-modal {
+        align-items: flex-end !important;
+        padding: 0 !important;
+      }
+      #settings-modal > div {
+        border-radius: 20px 20px 0 0 !important;
+        max-width: 100% !important;
+        width: 100% !important;
+        max-height: 92vh !important;
+        border-left: none !important;
+        border-right: none !important;
+        border-bottom: none !important;
+        padding-bottom: env(safe-area-inset-bottom, 0px) !important;
+      }
+
+      /* ── Delete + Reappro modals centrés ── */
+      #delete-modal, #reappro-modal { padding: 16px !important; }
+
+      /* ── Shortcuts overlay ── */
+      #shortcuts-overlay { padding: 0 !important; align-items: flex-end !important; }
+      .shortcuts-panel { border-radius: 20px 20px 0 0 !important; max-height: 85vh; overflow-y: auto; }
+
+      /* ── Order counter caché sur mobile (trop large) ── */
+      #order-counter { display: none !important; }
+
+      /* ── Top produits : plus de débordement ── */
+      #top-products-container > div { gap: 6px !important; flex-wrap: nowrap; }
+      #top-products-container > div > span:nth-child(2) { width: auto !important; max-width: 80px !important; min-width: 0; }
+      #top-products-container > div > span:nth-child(4) { display: none !important; }
+      #top-products-container > div > span:last-child   { width: auto !important; flex-shrink: 0; white-space: nowrap; }
+
+      /* ── Orders header : wrappé proprement ── */
+      #btn-export-csv span { display: none; }
+      .search-input { width: 160px !important; }
+      .search-input:focus { width: 180px !important; }
+
+      /* ── Padding bottom safe area ── */
+      main { padding-bottom: calc(80px + env(safe-area-inset-bottom, 0px)) !important; }
+      .inv-grid-head { display: none !important; }
+      .inv-grid-row {
+        display: flex !important;
+        flex-direction: column !important;
+        gap: 6px !important;
+        padding: 14px 14px !important;
+        border-radius: 14px !important;
+        border: 1px solid var(--border) !important;
+        margin-bottom: 8px;
+        background: var(--panel) !important;
+      }
+      /* Nom + delete sur la même ligne */
+      .inv-grid-row > div:nth-child(1) { order: 1; width: 100%; }
+      .inv-grid-row > div:nth-child(6) { 
+        order: 0; position: absolute; right: 14px; top: 14px;
+      }
+      .inv-grid-row { position: relative; }
+      .inv-del { opacity: 1 !important; }
+      /* Champs cachés sur mobile */
+      .inv-grid-row > div:nth-child(2),
+      .inv-grid-row > div:nth-child(3),
+      .inv-grid-row > div:nth-child(4),
+      .inv-grid-row > div:nth-child(5) { display: none !important; }
+      /* Info mobile */
+      .inv-mobile-info {
+        display: flex !important;
+        flex-wrap: wrap;
+        gap: 6px;
+        font-size: 12px;
+        color: rgba(255,255,255,0.45);
+        order: 2;
+      }
+      .inv-mobile-info .sep { color: rgba(255,255,255,0.18); }
+
+      /* ── ORDERS : cards mobile ── */
+      .orders-head { display: none !important; }
+      .orders-list { gap: 8px; display: flex; flex-direction: column; }
+      .order-row {
+        display: flex !important;
+        flex-direction: column !important;
+        gap: 8px !important;
+        padding: 14px !important;
+        border-radius: 14px !important;
+        border: 1px solid var(--border) !important;
+        background: var(--panel) !important;
+        margin-bottom: 0 !important;
+        box-shadow: none !important;
+      }
+      .order-row::before { display: none; }
+      /* Ligne 1 : client + statut */
+      .order-mob-top {
+        display: flex !important;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+      }
+      /* Ligne 2 : article + montant */
+      .order-mob-mid {
+        display: flex !important;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+      }
+      /* Ligne 3 : date + action */
+      .order-mob-bot {
+        display: flex !important;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+      }
+      /* Cacher les colonnes desktop dans les orders */
+      .order-row > div.oc-col { display: none !important; }
+
+      /* ── CATALOGUE : cards mobile ── */
+      .cat-grid-head { display: none !important; }
+      .cat-grid-row {
+        display: flex !important;
+        flex-direction: column !important;
+        gap: 8px !important;
+        padding: 14px !important;
+        border-radius: 14px !important;
+        border: 1px solid var(--border) !important;
+        background: var(--panel) !important;
+        margin-bottom: 8px;
+        position: relative;
+      }
+      .cat-grid-row > div:nth-child(1) { order: 1; } /* Nom */
+      .cat-grid-row > div:nth-child(6) { order: 2; display: flex !important; justify-content: flex-start; }
+      .cat-grid-row > div:nth-child(7) { position: absolute; top: 14px; right: 14px; }
+      .cat-del { opacity: 1 !important; }
+      .cat-grid-row > div:nth-child(2),
+      .cat-grid-row > div:nth-child(3),
+      .cat-grid-row > div:nth-child(4),
+      .cat-grid-row > div:nth-child(5) { display: none !important; }
+      /* Info mobile catalogue */
+      .cat-mobile-info {
+        display: flex !important;
+        flex-wrap: wrap;
+        gap: 6px;
+        font-size: 12px;
+        color: rgba(255,255,255,0.45);
+        order: 1;
+      }
+      .cat-mobile-info .sep { color: rgba(255,255,255,0.18); }
+
+      /* ── STOCK form : 1 colonne ── */
+      .lg\\:grid-cols-3 { grid-template-columns: 1fr !important; }
+
+      /* ── ORDER form : 2 colonnes ── */
+      .md\\:grid-cols-6 { grid-template-columns: 1fr 1fr !important; }
+      .md\\:grid-cols-6 > *:last-child { grid-column: 1 / -1; }
+
+      /* ── PRODUCTS simulateur ── */
+      .lg\\:col-span-2.flex.flex-col.gap-4 { gap: 10px !important; }
+      .grid.grid-cols-2.gap-4 { grid-template-columns: 1fr 1fr !important; gap: 10px !important; }
+
+      /* ── Modals ── */
+      .panel-glass.rounded-2xl.w-full.max-w-md { max-width: calc(100vw - 32px) !important; }
+
+      /* ── Panels glass ── */
+      .panel-glass { padding: 14px !important; }
+      .panel-glass.rounded-2xl.p-6 { padding: 14px !important; }
+    }
+  </style>
+</head>
+<body class="min-h-screen text-gray-300">
+
+  <!-- Écran de chargement Supabase -->
+  <div id="app-loader" style="position:fixed;inset:0;z-index:600;background:#0d0d10;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;transition:opacity 0.3s;">
+    <div style="width:38px;height:38px;border-radius:50%;border:3px solid rgba(52,211,153,0.15);border-top-color:#34d399;animation:dc-spin 0.75s linear infinite;"></div>
+    <p style="color:rgba(255,255,255,0.35);font-size:13px;font-family:'DM Sans',sans-serif;letter-spacing:0.02em;">Synchronisation…</p>
+  </div>
+  <style>@keyframes dc-spin{to{transform:rotate(360deg)}}</style>
+
+  <!-- Écran de connexion Supabase (remplace le verrou local) -->
+  <div id="lock-screen" class="fixed inset-0 z-[300] flex items-center justify-center" style="display:none">
+    <div class="lock-card">
+      <div class="lock-logo"><i data-lucide="package-2" class="w-7 h-7"></i></div>
+      <h1 class="text-white text-xl font-semibold tracking-tight mb-1">DropControl</h1>
+      <p id="lock-subtitle" class="text-sm opacity-50 mb-7 text-center">Connectez-vous pour accéder à vos données</p>
+      <div class="w-full space-y-3">
+        <input id="lock-email" type="email" class="lock-input" placeholder="Votre email" autocomplete="email">
+        <input id="lock-input" type="password" class="lock-input" placeholder="Mot de passe" autocomplete="current-password">
+        <p id="lock-error" class="text-xs text-red-400 text-center" style="min-height:16px"></p>
+        <button id="lock-submit" class="lock-btn">Se connecter</button>
+      </div>
+      <p class="text-[11px] opacity-30 mt-6 text-center leading-relaxed">Connexion sécurisée via Supabase.<br>Vos données sont chiffrées et privées.</p>
+    </div>
+  </div>
+
+  <div id="toast-container"></div>
+
+  <div id="delete-modal" style="display:none!important" class="fixed inset-0 bg-black/60 backdrop-blur-sm items-center justify-center z-50">
+    <div class="panel-glass rounded-2xl p-6 w-full max-w-md border border-white/10 shadow-2xl">
+      <h4 class="text-white text-lg font-medium mb-2">Confirmer la suppression ?</h4>
+      <p class="text-sm opacity-60 mb-6">Cette action recalculera instantanément vos données financières et vos stocks disponibles.</p>
+      <div class="flex justify-end gap-3">
+        <button id="btn-cancel-delete" class="px-4 py-2 rounded-xl bg-white/5 hover:bg-white/10 text-white text-sm transition">Annuler</button>
+        <button id="btn-confirm-delete" class="px-4 py-2 rounded-xl bg-red-500 hover:bg-red-600 text-white text-sm font-medium transition">Supprimer</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- SHORTCUTS OVERLAY -->
+  <div id="shortcuts-overlay" class="hidden">
+    <div class="shortcuts-panel">
+      <div class="flex items-center justify-between px-6 py-5 border-b border-white/10">
+        <div class="flex items-center gap-3">
+          <div style="width:32px;height:32px;border-radius:9px;background:rgba(52,211,153,0.1);border:1px solid rgba(52,211,153,0.2);display:flex;align-items:center;justify-content:center;">
+            <i data-lucide="keyboard" class="w-4 h-4 text-emerald-400"></i>
+          </div>
+          <h3 class="text-white font-semibold text-base">Raccourcis clavier</h3>
+        </div>
+        <button id="btn-shortcuts-close" class="p-1.5 rounded-lg hover:bg-white/10 text-gray-400 hover:text-white transition"><i data-lucide="x" class="w-4 h-4"></i></button>
+      </div>
+      <div class="px-6 pt-4 pb-1"><p class="text-[10px] uppercase tracking-widest text-white/25 font-semibold mb-2">Navigation</p></div>
+      <div class="shortcut-row"><span class="shortcut-desc">Dashboard</span><div class="shortcut-keys"><span class="kbd">Ctrl</span><span class="shortcut-sep">+</span><span class="kbd">1</span></div></div>
+      <div class="shortcut-row"><span class="shortcut-desc">Stock &amp; Inventaire</span><div class="shortcut-keys"><span class="kbd">Ctrl</span><span class="shortcut-sep">+</span><span class="kbd">2</span></div></div>
+      <div class="shortcut-row"><span class="shortcut-desc">Products &amp; Margin</span><div class="shortcut-keys"><span class="kbd">Ctrl</span><span class="shortcut-sep">+</span><span class="kbd">3</span></div></div>
+      <div class="shortcut-row"><span class="shortcut-desc">Orders</span><div class="shortcut-keys"><span class="kbd">Ctrl</span><span class="shortcut-sep">+</span><span class="kbd">4</span></div></div>
+      <div class="px-6 pt-4 pb-1"><p class="text-[10px] uppercase tracking-widest text-white/25 font-semibold mb-2">Actions rapides</p></div>
+      <div class="shortcut-row"><span class="shortcut-desc">Nouvelle commande → focus client</span><div class="shortcut-keys"><span class="kbd">N</span></div></div>
+      <div class="shortcut-row"><span class="shortcut-desc">Nouveau lot de stock → focus nom</span><div class="shortcut-keys"><span class="kbd">S</span></div></div>
+      <div class="shortcut-row"><span class="shortcut-desc">Ouvrir les paramètres</span><div class="shortcut-keys"><span class="kbd">Ctrl</span><span class="shortcut-sep">+</span><span class="kbd">,</span></div></div>
+      <div class="shortcut-row"><span class="shortcut-desc">Fermer / annuler</span><div class="shortcut-keys"><span class="kbd">Esc</span></div></div>
+      <div class="shortcut-row"><span class="shortcut-desc">Afficher ces raccourcis</span><div class="shortcut-keys"><span class="kbd">?</span></div></div>
+      <div class="px-6 py-4 border-t border-white/5"><p class="text-[10px] text-white/20 text-center">Mac : <span class="kbd" style="font-size:9px">⌘</span> à la place de <span class="kbd" style="font-size:9px">Ctrl</span></p></div>
+    </div>
+  </div>
+
+  <!-- SIDEBAR -->
+  <aside class="glass-sidebar w-64 fixed top-0 left-0 h-full p-6 flex flex-col z-10">
+    <div class="mb-10"><h1 class="text-white tracking-tight font-medium text-xl">DropControl</h1></div>
+    <nav class="flex-1 space-y-1">
+      <a id="btn-dashboard" class="nav-item active flex items-center gap-3 px-3 py-2.5 text-white text-sm">Dashboard</a>
+      <a id="btn-stock"     class="nav-item flex items-center gap-3 px-3 py-2.5 text-sm opacity-60">Stock &amp; Inventaire <span id="sidebar-stock-badge" class="stock-badge hidden">0</span></a>
+      <a id="btn-products"  class="nav-item flex items-center gap-3 px-3 py-2.5 text-sm opacity-60">Products &amp; Margin</a>
+      <a id="btn-orders"    class="nav-item flex items-center gap-3 px-3 py-2.5 text-sm opacity-60">Orders</a>
+    </nav>
+    <button id="btn-show-shortcuts" class="shortcut-hint-btn mt-4">
+      <i data-lucide="keyboard" style="width:13px;height:13px;flex-shrink:0"></i>
+      <span style="flex:1">Raccourcis</span>
+      <span class="kbd">?</span>
+    </button>
+  </aside>
+
+  <main class="ml-64 p-10" style="width:calc(100% - 16rem)">
+    <header class="glass-header -mx-10 px-10 py-6 mb-10 sticky top-0 z-20">
+      <div class="flex items-center justify-between">
+        <div><h2 id="page-title" class="text-white text-2xl font-medium tracking-tight">Overview</h2><p id="page-subtitle" class="mt-1 opacity-50 text-sm">Welcome back to your command center</p></div>
+        <div class="flex items-center gap-4">
+          <div class="text-right hidden sm:block"><p id="header-date" class="text-sm text-white/70 font-medium capitalize">—</p><p id="header-time" class="text-[11px] text-white/30 mt-0.5">—</p></div>
+          <button id="btn-settings-open" class="p-2.5 rounded-xl bg-white/5 border border-white/5 hover:border-white/10 text-gray-400 hover:text-white transition flex items-center justify-center"><i data-lucide="settings" class="w-5 h-5"></i></button>
+        </div>
+      </div>
+    </header>
+
+    <!-- DASHBOARD -->
+    <div id="view-dashboard" class="space-y-6">
+      <div class="flex items-center justify-between panel-glass rounded-2xl p-4 mb-4 gap-4 flex-wrap">
+        <div class="date-chip"><div class="date-chip-icon"><i data-lucide="calendar-days" class="w-4 h-4 text-emerald-400"></i></div><div><p id="dash-date" class="date-chip-date">—</p><p id="dash-time" class="date-chip-time">—</p></div></div>
+        <div class="flex items-center gap-4 flex-wrap ml-auto">
+          <div class="flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span><p class="text-sm font-medium text-white/60">Période :</p></div>
+          <select id="dash-month-selector" class="calculator-input py-1.5 px-4 text-sm bg-white/5 border-white/10 rounded-xl outline-none text-white font-medium cursor-pointer w-auto"><option value="all">Toutes périodes</option></select>
+          <div class="flex items-center gap-2 bg-white/5 border border-white/10 px-4 py-1.5 rounded-xl text-sm text-white/70"><span class="text-xs text-white/40 uppercase tracking-wider font-medium mr-1">Trésorerie :</span><span id="dash-budget-display" class="font-semibold text-white">€0.00</span></div>
+        </div>
+      </div>
+      <section class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 mb-10">
+        <div class="metric-card rounded-2xl p-6"><div class="flex justify-between items-start mb-2"><p class="text-xs uppercase tracking-widest opacity-50">Net Profit</p><i data-lucide="trending-up" class="w-4 h-4 text-emerald-400"></i></div><p id="dash-profit" class="text-2xl text-emerald-400 font-medium">€0.00</p><p id="dash-profit-compare" class="text-xs mt-3 opacity-50">Objectif du mois ciblé</p><div class="goal-bar-track"><div id="dash-goal-bar" class="goal-bar-fill" style="width:0%"></div></div></div>
+        <div class="metric-card rounded-2xl p-6"><div class="flex justify-between items-start mb-2"><p class="text-xs uppercase tracking-widest opacity-50">Chiffre d'affaires</p><i data-lucide="dollar-sign" class="w-4 h-4 text-blue-400"></i></div><p id="dash-revenue" class="text-2xl text-white font-medium">€0.00</p><p id="dash-revenue-compare" class="text-xs mt-3 opacity-40">Total encaissé</p></div>
+        <div class="metric-card rounded-2xl p-6"><div class="flex justify-between items-start mb-2"><p class="text-xs uppercase tracking-widest opacity-50">Orders</p><i data-lucide="shopping-bag" class="w-4 h-4 text-white/50"></i></div><p id="dash-orders" class="text-2xl text-white font-medium">0</p><p id="dash-orders-compare" class="text-xs mt-3 opacity-40">Commandes au total</p></div>
+        <div class="metric-card rounded-2xl p-6"><div class="flex justify-between items-start mb-2"><p class="text-xs uppercase tracking-widest opacity-50">Panier Moyen</p><i data-lucide="credit-card" class="w-4 h-4 text-white/50"></i></div><p id="dash-roi" class="text-2xl text-white font-medium">€0.00</p><p id="dash-basket-compare" class="text-xs mt-3 opacity-40">Moyenne par vente</p></div>
+        <div class="metric-card rounded-2xl p-6"><div class="flex justify-between items-start mb-2"><p class="text-xs uppercase tracking-widest opacity-50">Taux de Marge</p><i data-lucide="percent" class="w-4 h-4 text-emerald-400"></i></div><p id="dash-margin-rate" class="text-2xl text-white font-medium">0.0%</p><p id="dash-margin-compare" class="text-xs mt-3 opacity-40">Santé globale du mois</p></div>
+      </section>
+      <div class="grid grid-cols-1 xl:grid-cols-3 gap-6">
+        <div class="panel-glass xl:col-span-2 rounded-2xl p-6"><h3 class="text-xs text-white/80 mb-6 font-medium uppercase tracking-wider">Sales Trend (Live)</h3><svg id="chart-svg" viewBox="0 0 600 200" class="w-full h-48" style="overflow:visible"><line x1="50" y1="20" x2="600" y2="20" stroke="rgba(255,255,255,0.04)" stroke-width="1"/><line x1="50" y1="62" x2="600" y2="62" stroke="rgba(255,255,255,0.03)" stroke-width="1"/><line x1="50" y1="105" x2="600" y2="105" stroke="rgba(255,255,255,0.04)" stroke-width="1"/><line x1="50" y1="148" x2="600" y2="148" stroke="rgba(255,255,255,0.03)" stroke-width="1"/><line x1="50" y1="190" x2="600" y2="190" stroke="rgba(255,255,255,0.06)" stroke-width="1"/><text id="chart-txt-max" x="0" y="24" fill="rgba(255,255,255,0.3)" font-size="10" font-weight="500">€100</text><text id="chart-txt-mid" x="0" y="109" fill="rgba(255,255,255,0.2)" font-size="10">€50</text><text x="0" y="194" fill="rgba(255,255,255,0.2)" font-size="10">€0</text></svg></div>
+        <div class="panel-glass rounded-2xl p-6 flex flex-col"><h3 class="text-xs text-white/80 mb-4 font-medium uppercase tracking-wider flex items-center gap-2"><i data-lucide="alert-triangle" class="w-4 h-4 text-red-400"></i> Alerte Rupture Stock</h3><div class="overflow-y-auto max-h-48 rounded-xl border border-white/5 bg-black/10"><table class="w-full text-left text-xs border-collapse"><thead><tr class="border-b border-white/10 bg-white/5 text-[10px] uppercase tracking-wider opacity-60"><th class="p-2.5">Stock Group</th><th class="p-2.5 text-center">Qty</th><th class="p-2.5 text-right">Action</th></tr></thead><tbody id="alert-tbody" class="divide-y divide-white/5 text-gray-300"></tbody></table></div></div>
+      </div>
+      <div class="panel-glass rounded-2xl p-6 mt-6"><h3 class="text-xs text-white/80 mb-4 font-medium uppercase tracking-wider flex items-center gap-2"><i data-lucide="trophy" class="w-4 h-4 text-amber-400"></i> Top Produits par Revenu<span id="top-products-period" class="ml-auto text-[10px] text-gray-500 normal-case font-normal"></span></h3><div id="top-products-container" class="space-y-3"></div></div>
+      <div class="panel-glass rounded-2xl p-6 mt-6"><h3 class="text-xs text-white/80 mb-4 font-medium uppercase tracking-wider flex items-center gap-2"><i data-lucide="truck" class="w-4 h-4 text-amber-400"></i> To-Do List Express</h3><div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" id="todo-list-container"></div></div>
+    </div>
+
+    <!-- STOCK -->
+    <div id="view-stock" class="hidden space-y-8">
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <!-- Formulaire ajout stock — propre, sans shortcut dans le bouton -->
+        <div class="panel-glass rounded-2xl p-6 flex flex-col space-y-4">
+          <div class="flex items-center justify-between mb-1">
+            <h3 class="text-lg text-white font-medium">Nouveau Lot de Stock</h3>
+            <!-- Shortcut badge discret dans le titre, pas dans le bouton -->
+            <span class="flex items-center gap-1 text-[10px] text-white/20">
+              <span class="kbd" style="font-size:9px">S</span>
+              <span>pour accéder</span>
+            </span>
+          </div>
+          <div class="flex flex-col"><label class="text-xs text-gray-400 uppercase tracking-wider mb-1">Nom du Groupe d'articles</label><input id="stock-name" type="text" class="calculator-input" placeholder="Ex: Silver Chain 50cm"></div>
+          <div class="flex flex-col"><label class="text-xs text-gray-400 uppercase tracking-wider mb-1">Prix d'Investissement Total (€)</label><input id="stock-total-cost" type="number" class="calculator-input" placeholder="Ex: 150.00" step="0.01"></div>
+          <div class="flex flex-col"><label class="text-xs text-gray-400 uppercase tracking-wider mb-1">Quantité Achetée</label><input id="stock-qty" type="number" class="calculator-input" placeholder="Ex: 30"></div>
+          <button id="btn-add-stock" class="btn-primary w-full bg-white text-black font-semibold text-sm py-3 rounded-xl hover:bg-gray-100 transition active:scale-95 mt-2 flex items-center justify-center gap-2">
+            <i data-lucide="plus" class="w-4 h-4"></i>
+            Ajouter le lot à l'inventaire
+          </button>
+          <button id="btn-import-invoice" type="button" class="w-full py-2.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-sm font-medium hover:bg-emerald-500/20 transition flex items-center justify-center gap-2">
+            <i data-lucide="file-scan" class="w-4 h-4"></i>
+            Importer une facture (IA)
+          </button>
+        </div>
+        <div class="lg:col-span-2 panel-glass rounded-2xl p-6">
+          <h3 class="text-lg text-white font-medium mb-5">État Actuel de l'Inventaire</h3>
+          <div class="inv-grid-head"><div>Groupe d'Articles</div><div>Investissement</div><div>Qté Init.</div><div>En Stock</div><div>Coût U.</div><div></div></div>
+          <div id="stock-tbody"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- PRODUCTS -->
+    <div id="view-products" class="hidden space-y-8">
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div class="panel-glass rounded-2xl p-6 flex flex-col space-y-4">
+          <h3 class="text-lg text-white font-medium mb-2">Simulateur de Coûts</h3>
+          <div class="flex flex-col"><label class="text-xs text-gray-400 uppercase tracking-wider mb-1">Nom du Produit à tester</label><input id="inp-product-name" type="text" class="calculator-input" placeholder="Ex: Montre Onyx V2"></div>
+          <div class="flex flex-col"><label class="text-xs text-gray-400 uppercase tracking-wider mb-1">Prix d'Achat Fournisseur (€)</label><input id="inp-cost" type="number" class="calculator-input" step="0.01"></div>
+          <div class="flex flex-col"><label class="text-xs text-gray-400 uppercase tracking-wider mb-1">Frais de Livraison Fournisseur (€)</label><input id="inp-shipping" type="number" class="calculator-input" step="0.01"></div>
+          <div class="flex flex-col"><label class="text-xs text-gray-400 uppercase tracking-wider mb-1">Prix de Vente Marketing (€)</label><input id="inp-selling" type="number" class="calculator-input" step="0.01"></div>
+          <div class="flex flex-col">
+            <label class="text-xs text-gray-400 uppercase tracking-wider mb-1 flex items-center gap-2">Quantité du Lot <span class="text-[9px] px-1.5 py-0.5 rounded-full bg-emerald-500/15 text-emerald-400 border border-emerald-500/20 font-semibold uppercase tracking-wider">Nouveau</span></label>
+            <div class="relative"><input id="inp-qty" type="number" class="calculator-input" value="1" min="1" step="1"><span style="position:absolute;right:14px;top:50%;transform:translateY(-50%);font-size:11px;color:rgba(255,255,255,0.25);pointer-events:none">unité(s)</span></div>
+          </div>
+          <button id="btn-save-product" class="btn-primary w-full bg-white text-black font-medium text-sm py-3 rounded-xl hover:bg-gray-200 transition active:scale-95 mt-2">Sauvegarder dans le catalogue</button>
+        </div>
+        <div class="lg:col-span-2 flex flex-col gap-4">
+          <div class="grid grid-cols-2 gap-4">
+            <div class="panel-glass rounded-2xl p-6 flex flex-col justify-between"><span class="text-xs uppercase text-gray-400 tracking-wider">Coût de Revient / U</span><span id="out-total-cost" class="text-3xl text-white font-medium mt-2">€0.00</span></div>
+            <div class="panel-glass rounded-2xl p-6 flex flex-col justify-between"><span class="text-xs uppercase text-gray-400 tracking-wider">Marge Brute (%)</span><span id="out-margin-rate" class="text-3xl text-emerald-400 font-medium mt-2">0.0%</span></div>
+            <div id="card-profit" class="panel-glass rounded-2xl p-6 flex flex-col justify-between col-span-2 transition-all duration-300"><span class="text-xs uppercase text-gray-400 tracking-wider">Bénéfice Net / Unité</span><span id="out-net-profit" class="text-4xl font-semibold mt-2 text-emerald-400">€0.00</span></div>
+            <div class="panel-glass rounded-2xl p-6 flex flex-col justify-between"><span class="text-xs uppercase text-gray-400 tracking-wider">Break-Even ROAS</span><span id="out-be-roas" class="text-2xl text-white font-medium mt-2">0.00</span></div>
+            <div class="panel-glass rounded-2xl p-6 flex flex-col justify-between"><span class="text-xs uppercase text-gray-400 tracking-wider">Frais Passerelle</span><span id="out-fees" class="text-2xl text-white font-medium mt-2">€0.00</span></div>
+          </div>
+          <div id="card-batch" class="batch-card hidden">
+            <div class="flex items-center justify-between mb-4"><div class="flex items-center gap-2"><i data-lucide="layers" class="w-4 h-4 text-emerald-400"></i><span class="text-sm font-semibold text-white">Rentabilité du lot complet</span></div><span id="batch-qty-label" class="text-xs px-2.5 py-1 rounded-full bg-emerald-500/15 text-emerald-400 border border-emerald-500/25 font-bold">×1</span></div>
+            <div class="grid grid-cols-3 gap-4">
+              <div class="bg-white/4 rounded-xl p-4 border border-white/6"><p class="text-[10.5px] text-white/40 uppercase tracking-wider mb-1.5">Coût total lot</p><p id="batch-total-cost" class="text-xl font-bold text-white">€0.00</p></div>
+              <div class="bg-emerald-500/5 rounded-xl p-4 border border-emerald-500/12"><p class="text-[10.5px] text-white/40 uppercase tracking-wider mb-1.5">Profit total lot</p><p id="batch-profit" class="text-xl font-bold text-emerald-400">€0.00</p></div>
+              <div class="bg-blue-500/5 rounded-xl p-4 border border-blue-500/12"><p class="text-[10.5px] text-white/40 uppercase tracking-wider mb-1.5">CA potentiel</p><p id="batch-revenue" class="text-xl font-bold text-blue-400">€0.00</p></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- CATALOGUE — CSS Grid (remplace la table) -->
+      <div class="panel-glass rounded-2xl p-6">
+        <div class="flex items-center justify-between mb-6">
+          <h3 class="text-lg text-white font-medium">Catalogue des Produits Gagnants</h3>
+          <span id="catalog-counter" class="text-xs bg-white/10 text-white px-3 py-1 rounded-full font-medium">0 Produits validés</span>
+        </div>
+        <!-- En-tête -->
+        <div class="cat-grid-head">
+          <div>Produit</div>
+          <div>Coût Total</div>
+          <div>Prix de Vente</div>
+          <div>Marge %</div>
+          <div>Profit Net / U</div>
+          <div style="text-align:center">Lot</div>
+          <div></div>
+        </div>
+        <!-- Lignes injectées par JS -->
+        <div id="catalog-tbody"></div>
+      </div>
+    </div>
+
+    <!-- ORDERS -->
+    <div id="view-orders" class="hidden space-y-6">
+      <div class="panel-glass rounded-2xl p-6">
+        <div class="flex items-center justify-between mb-4">
+          <h3 class="text-sm text-white font-medium uppercase tracking-wider opacity-80">Ajouter une commande</h3>
+          <div class="flex items-center gap-1.5 text-[11px] text-white/20"><span class="kbd" style="font-size:9px">N</span><span>pour accéder</span></div>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-6 gap-4 items-end">
+          <div class="flex flex-col min-w-0"><label class="text-xs text-gray-400 mb-1">Nom Client</label><input id="order-customer" type="text" class="calculator-input" placeholder="Ex: Karim Benz"></div>
+          <div class="flex flex-col min-w-0"><label class="text-xs text-gray-400 mb-1">Article (En Stock)</label><select id="order-product-select" class="calculator-input"></select></div>
+          <div class="flex flex-col min-w-0"><label class="text-xs text-gray-400 mb-1">Quantité</label><input id="order-qty" type="number" class="calculator-input" value="1" min="1"></div>
+          <div class="flex flex-col min-w-0"><label class="text-xs text-gray-400 mb-1">Prix Encaissé (€)</label><input id="order-total" type="number" class="calculator-input" placeholder="59.99" step="0.01"></div>
+          <div class="flex flex-col min-w-0"><label class="text-xs text-gray-400 mb-1">Statut</label><select id="order-status" class="calculator-input"><option value="En cours">En cours</option><option value="Expédié">Expédié</option><option value="Livré">Livré</option></select></div>
+          <button id="btn-add-order" class="btn-primary bg-white text-black font-semibold text-sm py-2.5 px-4 rounded-xl hover:bg-gray-100 transition active:scale-95 flex items-center justify-center gap-2"><i data-lucide="plus" class="w-4 h-4"></i> Ajouter</button>
+        </div>
+      </div>
+      <div class="panel-glass rounded-2xl p-6">
+        <div class="flex items-center justify-between mb-6 flex-wrap gap-3">
+          <h3 class="text-lg text-white font-medium">Recent Orders</h3>
+          <div class="flex items-center gap-3">
+            <div class="search-box"><input id="order-search" type="text" class="search-input" placeholder="Rechercher client ou article…"><i data-lucide="search"></i></div>
+            <button id="btn-export-csv" class="text-xs bg-white/5 hover:bg-white/10 border border-white/10 text-white px-3 py-1.5 rounded-lg transition flex items-center gap-1.5"><i data-lucide="download" class="w-3.5 h-3.5"></i> Export CSV</button>
+            <span id="order-counter" class="text-xs bg-white/10 text-white px-3 py-1 rounded-full font-medium">0 Orders Total</span>
+          </div>
+        </div>
+        <div class="orders-head"><span>Client</span><span>Article</span><span>Montant</span><span>Statut</span><span class="text-right">Action</span></div>
+        <div id="orders-list" class="orders-list"></div>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- MODAL PARAMÈTRES -->
+  <div id="settings-modal" style="display:none!important" class="fixed inset-0 bg-black/70 backdrop-blur-md items-center justify-center z-50 p-4">
+    <div class="panel-glass rounded-2xl w-full max-w-md border border-white/10 shadow-2xl flex flex-col" style="max-height:88vh">
+      <div class="flex items-center gap-2 px-6 pt-6 pb-4 border-b border-white/10 flex-shrink-0"><i data-lucide="sliders" class="w-5 h-5 text-emerald-400"></i><h4 class="text-white text-lg font-medium">Configurations Globales</h4><button id="btn-settings-close-x" class="ml-auto p-1.5 rounded-lg hover:bg-white/10 text-gray-400 hover:text-white transition"><i data-lucide="x" class="w-4 h-4"></i></button></div>
+      <div class="overflow-y-auto px-6 py-5"><div class="space-y-4">
+        <div class="grid grid-cols-2 gap-3"><div class="flex flex-col"><label class="text-[11px] text-gray-400 uppercase tracking-wider mb-1">Frais Fixes Passerelle (€)</label><input id="set-fee-fixed" type="number" class="calculator-input text-sm" placeholder="0.00" step="0.01"></div><div class="flex flex-col"><label class="text-[11px] text-gray-400 uppercase tracking-wider mb-1">Frais Variables (%)</label><input id="set-fee-percent" type="number" class="calculator-input text-sm" placeholder="2.0" step="0.1"></div></div>
+        <div class="flex flex-col"><label class="text-[11px] text-gray-400 uppercase tracking-wider mb-1">Seuil Alerte Stock Bas</label><input id="set-stock-alert" type="number" class="calculator-input text-sm" placeholder="3"></div>
+        <div class="flex flex-col"><label class="text-[11px] text-gray-400 uppercase tracking-wider mb-1">Objectif Net Mensuel (€)</label><input id="set-monthly-goal" type="number" class="calculator-input text-sm" placeholder="1000"></div>
+        <div class="flex flex-col"><label class="text-[11px] text-gray-400 uppercase tracking-wider mb-1">Capital de départ (€)</label><input id="set-initial-capital" type="number" class="calculator-input text-sm" placeholder="0"></div>
+        <div class="border-t border-white/10 pt-5 mt-5">
+          <h4 class="text-xs font-semibold text-white uppercase tracking-wider mb-3">Sauvegarde &amp; Restauration</h4>
+          <div class="flex gap-3"><button id="btn-export-data" type="button" class="flex-1 py-2 rounded-xl bg-white/5 hover:bg-white/10 text-white text-xs font-medium border border-white/10 transition flex items-center justify-center gap-2">📥 Exporter (.json)</button><button id="btn-trigger-import" type="button" class="flex-1 py-2 rounded-xl bg-white/5 hover:bg-white/10 text-white text-xs font-medium border border-white/10 transition flex items-center justify-center gap-2">📤 Importer</button><input id="input-import-file" type="file" accept=".json" class="hidden"></div>
+          <div class="mt-4"><label class="text-[11px] text-gray-400 uppercase tracking-wider mb-1 block">Effacer les commandes d'un mois</label><div class="flex gap-2"><select id="purge-month-select" class="calculator-input text-sm flex-1"><option value="">— Choisir un mois —</option></select><button id="btn-purge-month" type="button" class="px-3 py-2 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 text-xs font-medium border border-amber-500/20 transition whitespace-nowrap">Effacer</button></div></div>
+          <button id="btn-reset-data" type="button" class="w-full mt-3 py-2 rounded-xl bg-red-500/10 hover:bg-red-500/20 text-red-300 text-xs font-medium border border-red-500/20 transition flex items-center justify-center gap-2">🗑️ Réinitialiser toutes les données</button>
+          <div class="mt-5 pt-5 border-t border-white/10">
+            <button id="btn-logout" type="button" class="w-full py-2 rounded-xl bg-white/5 hover:bg-white/10 text-white text-xs font-medium border border-white/10 transition flex items-center justify-center gap-2">🚪 Se déconnecter</button>
+          </div>
+        </div>
+      </div></div>
+      <div class="flex justify-end gap-3 px-6 py-4 border-t border-white/10 flex-shrink-0"><button id="btn-settings-close" class="px-4 py-2 rounded-xl bg-white/5 hover:bg-white/10 text-white text-sm transition">Annuler</button><button id="btn-settings-save" class="px-4 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white text-sm font-medium transition">Sauvegarder</button></div>
+    </div>
+  </div>
+
+  <div id="reappro-modal" style="display:none!important" class="fixed inset-0 bg-black/60 backdrop-blur-sm items-center justify-center z-50">
+    <div class="panel-glass rounded-2xl p-6 w-full max-w-sm border border-white/10 shadow-2xl">
+      <h4 class="text-white text-lg font-medium mb-1">Réapprovisionnement express</h4>
+      <p id="reappro-stock-name" class="text-sm text-gray-400 mb-5">—</p>
+      <div class="flex flex-col mb-4"><label class="text-[11px] text-gray-400 uppercase tracking-wider mb-1">Quantité à ajouter</label><input id="reappro-qty" type="number" min="1" value="10" class="calculator-input text-sm"></div>
+      <div class="flex flex-col mb-6"><label class="text-[11px] text-gray-400 uppercase tracking-wider mb-1">Coût total du réappro (€)</label><input id="reappro-cost" type="number" min="0" step="0.01" value="0" class="calculator-input text-sm"></div>
+      <div class="flex justify-end gap-3"><button id="btn-reappro-cancel" class="px-4 py-2 rounded-xl bg-white/5 hover:bg-white/10 text-white text-sm transition">Annuler</button><button id="btn-reappro-confirm" class="px-4 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white text-sm font-medium transition">Ajouter au stock</button></div>
+    </div>
+  </div>
+
+  <!-- IMPORT FACTURE IA -->
+  <div id="import-invoice-modal" class="fixed inset-0 z-[400] hidden items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+    <div class="panel-glass rounded-2xl p-6 w-full max-w-lg">
+      <div class="flex items-center justify-between mb-6">
+        <div class="flex items-center gap-3">
+          <div style="width:36px;height:36px;border-radius:10px;background:rgba(52,211,153,0.1);border:1px solid rgba(52,211,153,0.2);display:flex;align-items:center;justify-content:center">
+            <i data-lucide="file-scan" class="w-5 h-5 text-emerald-400"></i>
+          </div>
+          <div>
+            <h3 class="text-white font-semibold text-base">Import Facture IA</h3>
+            <p class="text-xs text-white/40">Temu, AliExpress, ou toute autre facture</p>
+          </div>
+        </div>
+        <button id="btn-import-invoice-close" class="p-1.5 rounded-lg hover:bg-white/10 text-gray-400 hover:text-white transition"><i data-lucide="x" class="w-4 h-4"></i></button>
+      </div>
+
+      <!-- Zone upload -->
+      <div id="import-upload-zone" style="border:2px dashed rgba(255,255,255,0.1);border-radius:14px;padding:32px 20px;text-align:center;cursor:pointer;transition:all 0.2s" onclick="document.getElementById('import-file-input').click()">
+        <input type="file" id="import-file-input" accept="image/*,application/pdf" class="hidden">
+        <i data-lucide="upload-cloud" style="width:36px;height:36px;color:#34d399;margin:0 auto 12px"></i>
+        <p class="text-white font-medium text-sm mb-1">Dépose ta facture ici</p>
+        <p class="text-xs" style="color:rgba(255,255,255,0.35)">Photo ou PDF · Gemini lit et extrait les articles automatiquement</p>
+        <div class="mt-4 inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium text-emerald-400" style="background:rgba(52,211,153,0.08);border:1px solid rgba(52,211,153,0.2)">
+          <i data-lucide="folder-open" style="width:14px;height:14px"></i>
+          Choisir un fichier
+        </div>
+      </div>
+
+      <!-- Loading -->
+      <div id="import-loading" class="hidden text-center py-10">
+        <div style="width:38px;height:38px;border-radius:50%;border:3px solid rgba(52,211,153,0.15);border-top-color:#34d399;animation:dc-spin 0.75s linear infinite;margin:0 auto 14px"></div>
+        <p class="text-white/60 text-sm">Gemini analyse ta facture…</p>
+        <p class="text-white/30 text-xs mt-1">Quelques secondes</p>
+      </div>
+
+      <!-- Résultats -->
+      <div id="import-results" class="hidden">
+        <p class="text-xs uppercase tracking-wider mb-3" style="color:rgba(255,255,255,0.35)">Articles détectés — tu peux modifier avant de confirmer</p>
+        <div id="import-items-list" class="space-y-2 mb-4" style="max-height:280px;overflow-y:auto"></div>
+        <div class="flex gap-3 mt-2">
+          <button id="btn-import-cancel" class="flex-1 py-2.5 rounded-xl text-sm transition" style="background:rgba(255,255,255,0.05);color:white">Annuler</button>
+          <button id="btn-import-confirm" class="flex-1 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white text-sm font-semibold transition">✅ Créer les stocks</button>
+        </div>
+      </div>
+
+      <!-- Erreur -->
+      <div id="import-error" class="hidden text-center py-8">
+        <i data-lucide="alert-circle" style="width:32px;height:32px;color:#f87171;margin:0 auto 10px"></i>
+        <p class="text-red-400 text-sm mb-1" id="import-error-msg">Impossible d'analyser cette facture</p>
+        <p class="text-white/30 text-xs mb-4">Essaie avec une photo plus nette ou un PDF</p>
+        <button onclick="resetImportModal()" class="text-xs text-emerald-400 hover:text-emerald-300 transition">↩ Réessayer</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- BOTTOM NAV — mobile uniquement -->
+  <nav class="bottom-nav" id="bottom-nav">
+    <button class="bnav-item active" id="mob-dashboard">
+      <div class="bnav-icon"><i data-lucide="layout-dashboard" style="width:21px;height:21px"></i></div>
+      <span>Dashboard</span>
+    </button>
+    <button class="bnav-item" id="mob-stock">
+      <div class="bnav-icon" style="position:relative">
+        <i data-lucide="package" style="width:21px;height:21px"></i>
+        <span id="mob-stock-badge" class="bnav-badge hidden">0</span>
+      </div>
+      <span>Stock</span>
+    </button>
+    <button class="bnav-item" id="mob-products">
+      <div class="bnav-icon"><i data-lucide="tag" style="width:21px;height:21px"></i></div>
+      <span>Produits</span>
+    </button>
+    <button class="bnav-item" id="mob-orders">
+      <div class="bnav-icon"><i data-lucide="shopping-bag" style="width:21px;height:21px"></i></div>
+      <span>Orders</span>
+    </button>
+  </nav>
+
+  <script>lucide.createIcons();</script>
+  <script src="app.js"></script>
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/sw.js').catch(() => {});
+      });
+    }
+  </script>
+</body>
+</html>
