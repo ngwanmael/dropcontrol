@@ -66,8 +66,12 @@ let importedItems = [];
 async function loadGeminiKey() {
   try {
     const { data } = await db.from('dc_data').select('value').eq('key', 'gemini_key').single();
-    if (data?.value) GEMINI_KEY = typeof data.value === 'string' ? data.value : JSON.stringify(data.value).replace(/"/g,'');
-  } catch(e) { console.warn('Clé Gemini non trouvée'); }
+    if (data?.value) {
+      const v = data.value;
+      GEMINI_KEY = typeof v === 'string' ? v : (typeof v === 'object' ? JSON.stringify(v).replace(/"/g,'') : String(v));
+      GEMINI_KEY = GEMINI_KEY.replace(/^"|"$/g, '').trim();
+    }
+  } catch(e) { console.warn('Clé Gemini non trouvée', e); }
 }
 
 function resetImportModal() {
