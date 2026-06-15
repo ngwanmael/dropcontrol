@@ -60,8 +60,15 @@ function initRealtime() {
 }
 
 // ─── GEMINI API — Import Facture ─────────────────────────
-const GEMINI_KEY = 'AQ.Ab8RN6JrvQw1BHOKpPfW7jkJbmoMo9kEn-ju-dsu4FJMktNmxw';
+let GEMINI_KEY = null; // chargée depuis Supabase au démarrage
 let importedItems = [];
+
+async function loadGeminiKey() {
+  try {
+    const { data } = await db.from('dc_data').select('value').eq('key', 'gemini_key').single();
+    if (data?.value) GEMINI_KEY = typeof data.value === 'string' ? data.value : JSON.stringify(data.value).replace(/"/g,'');
+  } catch(e) { console.warn('Clé Gemini non trouvée'); }
+}
 
 function resetImportModal() {
   document.getElementById('import-upload-zone').style.display = '';
@@ -73,6 +80,12 @@ function resetImportModal() {
 }
 
 async function analyzeInvoice(file) {
+  if (!GEMINI_KEY) {
+    document.getElementById('import-error').classList.remove('hidden');
+    document.getElementById('import-upload-zone').style.display = 'none';
+    document.getElementById('import-error-msg').textContent = 'Clé Gemini non configurée';
+    return;
+  }
   document.getElementById('import-upload-zone').style.display = 'none';
   document.getElementById('import-loading').classList.remove('hidden');
 
@@ -257,6 +270,9 @@ async function initStorage() {
     if (!s.id) s.id = 'st-' + Date.now() + '-' + Math.random().toString(36).slice(2, 7);
     return s;
   });
+
+  // Charge la clé Gemini depuis Supabase
+  await loadGeminiKey();
 
   // Mise à jour du cache local
   try {
