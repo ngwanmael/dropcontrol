@@ -669,16 +669,23 @@ function renderProducts(){
     profitCell.textContent=`€${np.toFixed(2)}`;
     profitCell.style.color=np<0?'var(--danger)':'var(--accent)';
 
-    // Bouton Lot
+    // Boutons Lot + 💰 Prix
     const lotCell=document.createElement('div');
-    lotCell.style.cssText='display:flex;justify-content:center;';
+    lotCell.style.cssText='display:flex;gap:6px;justify-content:center;align-items:center;';
     const lotBtn=document.createElement('button');
     lotBtn.className='cat-lot-btn';
     lotBtn.innerHTML=`<i data-lucide="layers" style="width:11px;height:11px"></i> Lot`;
     lotBtn.addEventListener('click',()=>openLotPanel(p.id,lotBtn));
-    lotCell.appendChild(lotBtn);
+    const priceBtn=document.createElement('button');
+    priceBtn.title='Estimateur de prix IA';
+    priceBtn.style.cssText='padding:5px 8px;border-radius:8px;cursor:pointer;font-size:13px;background:linear-gradient(135deg,rgba(251,191,36,0.12),rgba(52,211,153,0.06));border:1px solid rgba(251,191,36,0.25);transition:all 0.18s;line-height:1;';
+    priceBtn.textContent='💰';
+    priceBtn.addEventListener('click',()=>openPriceEstimator(p));
+    priceBtn.addEventListener('mouseover',()=>priceBtn.style.transform='scale(1.15)');
+    priceBtn.addEventListener('mouseout',()=>priceBtn.style.transform='');
+    lotCell.append(priceBtn,lotBtn);
 
-    // Bouton supprimer (visible au hover via CSS)
+    // Bouton supprimer
     const delCell=document.createElement('div');
     delCell.style.cssText='display:flex;justify-content:flex-end;';
     const delBtn=document.createElement('button');
@@ -688,12 +695,7 @@ function renderProducts(){
     delBtn.addEventListener('click',()=>openDeleteModal('product',p.id));
     delCell.appendChild(delBtn);
 
-    const priceBtnCell=document.createElement('div');
-    priceBtnCell.style.cssText='display:flex;align-items:center;justify-content:center;';
-    priceBtnCell.innerHTML=`<button class="cat-price-btn" title="Estimateur de prix IA" style="display:inline-flex;align-items:center;gap:4px;padding:5px 10px;border-radius:8px;cursor:pointer;font-size:11px;font-weight:700;background:linear-gradient(135deg,rgba(251,191,36,0.1),rgba(52,211,153,0.08));color:#fbbf24;border:1px solid rgba(251,191,36,0.2);transition:all 0.18s;white-space:nowrap">💰 Prix</button>`;
-    priceBtnCell.querySelector('.cat-price-btn').addEventListener('click',()=>openPriceEstimator(p));
-
-    row.append(nameCell,costCell,priceBtnCell,marginCell,profitCell,lotCell,delCell);
+    row.append(nameCell,costCell,priceCell,marginCell,profitCell,lotCell,delCell);
 
     // Info mobile catalogue
     const mobInfo=document.createElement('div');
