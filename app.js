@@ -59,57 +59,35 @@ function initRealtime() {
     .subscribe();
 }
 
-// ─── ESTIMATEUR DE PRIX IA ───────────────────────────────
-let currentPriceProduct = null;
-
-function closePriceModal() {
-  const modal = document.getElementById('price-estimator-modal');
-  const card  = modal?.querySelector('.price-modal-card');
-  if (!modal) return;
-  if (card) card.style.animation = 'price-modal-out 0.3s cubic-bezier(0.4,0,1,1) both';
-  modal.style.animation = 'ai-backdrop-out 0.3s ease both';
-  setTimeout(() => { hideModal(modal); modal.style.animation=''; if(card) card.style.animation=''; }, 280);
+// ─── ESTIMATEUR DE PRIX IA — Inline ─────────────────────
+function resetMarketInline() {
+  document.getElementById('market-loading')?.classList.add('hidden');
+  document.getElementById('market-results')?.classList.add('hidden');
+  document.getElementById('market-error')?.classList.add('hidden');
+  if (window._marketStageInterval) clearInterval(window._marketStageInterval);
 }
 
-function resetPriceModal() {
-  document.getElementById('price-form').classList.remove('hidden');
-  document.getElementById('price-loading').classList.add('hidden');
-  document.getElementById('price-results').classList.add('hidden');
-  document.getElementById('price-error').classList.add('hidden');
-  if (window._priceStageInterval) clearInterval(window._priceStageInterval);
-}
-
-function openPriceEstimator(product) {
-  currentPriceProduct = product;
-  resetPriceModal();
-  document.getElementById('price-product-name').textContent = product.name;
-  document.getElementById('price-product-cost').textContent = `Coût d'achat : €${(product.cost||0).toFixed(2)}/u · Prix actuel : €${(product.selling||0).toFixed(2)}`;
-  document.getElementById('price-details').value = '';
-  showModal(document.getElementById('price-estimator-modal'));
-  const card = document.querySelector('#price-estimator-modal .price-modal-card');
-  if (card) { card.style.animation='none'; void card.offsetWidth; card.style.animation=''; }
-  if (window.lucide) lucide.createIcons();
-}
-
-async function analyzePriceEstimate() {
+async function analyzeMarketInline() {
   if (!GEMINI_KEY) { showToast('Clé Gemini non configurée','error'); return; }
-  const p = currentPriceProduct;
-  const etat = document.getElementById('price-etat').value;
-  const cat  = document.getElementById('price-categorie').value;
-  const det  = document.getElementById('price-details').value.trim();
+  const name    = document.getElementById('inp-product-name')?.value.trim() || 'Article';
+  const cost    = parseFloat(document.getElementById('inp-cost')?.value) || 0;
+  const selling = parseFloat(document.getElementById('inp-selling')?.value) || 0;
+  const etat    = document.getElementById('market-etat')?.value || 'Neuf';
+  const cat     = document.getElementById('market-cat')?.value || 'Bijoux / Accessoires';
+  const det     = document.getElementById('market-details')?.value.trim() || '';
 
-  document.getElementById('price-form').classList.add('hidden');
-  document.getElementById('price-loading').classList.remove('hidden');
+  resetMarketInline();
+  document.getElementById('market-loading')?.classList.remove('hidden');
 
-  // Barre de progression
-  const fill = document.getElementById('price-progress-fill');
-  if (fill) { fill.style.animation='none'; void fill.offsetWidth; fill.style.animation='ai-progress 6s cubic-bezier(0.1,0.4,0.2,1) forwards'; }
+  // Progress animation
+  const prog = document.getElementById('market-progress');
+  if (prog) { prog.style.animation='none'; void prog.offsetWidth; prog.style.animation='ai-progress 6s cubic-bezier(0.1,0.4,0.2,1) forwards'; }
 
   // Messages cycliques
-  const stages = ['Analyse du marché Vinted…','Étude de la concurrence…','Calcul des marges optimales…','Recommandation en cours…'];
+  const stages = ['Analyse du marché…','Étude de la concurrence…','Calcul des marges…','Recommandation…'];
   let sIdx = 0;
-  const stEl = document.getElementById('price-stage-text');
-  window._priceStageInterval = setInterval(() => {
+  const stEl = document.getElementById('market-stage-text');
+  window._marketStageInterval = setInterval(() => {
     sIdx = (sIdx+1) % stages.length;
     if (stEl) { stEl.style.opacity='0'; setTimeout(()=>{ stEl.textContent=stages[sIdx]; stEl.style.opacity='1'; },200); }
   }, 1400);
@@ -117,19 +95,19 @@ async function analyzePriceEstimate() {
   try {
     const prompt = `Tu es un expert en revente de seconde main en France en 2026. Tu connais les prix pratiqués sur Vinted, Leboncoin, eBay France, Depop et les marchés aux puces.
 
-Article : ${p.name}
-Coût d'achat réel : €${(p.cost||0).toFixed(2)} par unité
-Prix testé actuellement : €${(p.selling||0).toFixed(2)}
+Article : ${name}
+Coût d'achat réel : €${cost.toFixed(2)} par unité
+Prix de vente testé : €${selling.toFixed(2)}
 Catégorie : ${cat}
 État : ${etat}
 ${det ? `Détails : ${det}` : ''}
 
-IMPORTANT : Sois honnête et objectif. Si tu n'as pas assez d'information sur cet article précis, dis-le clairement dans l'explication plutôt que d'inventer des chiffres. Base-toi sur des articles similaires si nécessaire. Les prix doivent être réalistes pour le marché français de la revente en 2026.
+IMPORTANT : Sois honnête et objectif. Si tu manques d'information sur cet article précis, dis-le clairement plutôt que d'inventer des chiffres. Base-toi sur des articles similaires si nécessaire.
 
-Donne une recommandation de prix de vente sur Vinted France, en tenant compte de l'ensemble du marché de revente français (Vinted, Leboncoin, eBay), de la concurrence, et d'une marge raisonnable pour un petit revendeur.
+Donne une recommandation de prix de vente sur le marché de revente français (Vinted, Leboncoin, eBay FR), avec une marge raisonnable pour un petit revendeur.
 
-Réponds UNIQUEMENT en JSON valide sans backticks ni texte autour :
-{"prix_min":4.90,"prix_optimal":7.90,"prix_max":11.90,"marge_min":"72%","marge_optimal":"84%","marge_max":"91%","explication":"Texte honnête du raisonnement (2-3 phrases, mentionne si données limitées)","conseils":["Conseil 1","Conseil 2","Conseil 3"]}`;
+Réponds UNIQUEMENT en JSON valide sans backticks :
+{"prix_min":4.90,"prix_optimal":7.90,"prix_max":11.90,"marge_min":"72%","marge_optimal":"84%","marge_max":"91%","explication":"2-3 phrases honnêtes","conseils":["Conseil 1","Conseil 2","Conseil 3"]}`;
 
     const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_KEY}`, {
       method:'POST', headers:{'Content-Type':'application/json'},
@@ -139,51 +117,49 @@ Réponds UNIQUEMENT en JSON valide sans backticks ni texte autour :
     const data = await res.json();
     const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
     if (!text) throw new Error('Réponse vide');
-    const clean = text.replace(/```json|```/g,'').trim();
-    const result = JSON.parse(clean);
+    const result = JSON.parse(text.replace(/```json|```/g,'').trim());
 
-    clearInterval(window._priceStageInterval);
-    document.getElementById('price-loading').classList.add('hidden');
-    document.getElementById('price-results').classList.remove('hidden');
-    showPriceResults(result, p);
+    clearInterval(window._marketStageInterval);
+    document.getElementById('market-loading')?.classList.add('hidden');
+    document.getElementById('market-results')?.classList.remove('hidden');
+    showMarketResultsInline(result);
 
   } catch(e) {
-    clearInterval(window._priceStageInterval);
-    console.error('Price estimator error:', e);
-    document.getElementById('price-loading').classList.add('hidden');
-    document.getElementById('price-error').classList.remove('hidden');
-    document.getElementById('price-error-msg').textContent = e.message || 'Erreur lors de l\'analyse';
+    clearInterval(window._marketStageInterval);
+    document.getElementById('market-loading')?.classList.add('hidden');
+    document.getElementById('market-error')?.classList.remove('hidden');
+    const errEl = document.getElementById('market-error-msg');
+    if (errEl) errEl.textContent = e.message || 'Erreur lors de l\'analyse';
   }
 }
 
-function showPriceResults(r, p) {
-  const c = document.getElementById('price-results-content');
+function showMarketResultsInline(r) {
+  const c = document.getElementById('market-results');
+  if (!c) return;
   const tiers = [
-    { label:'Prix minimum', price:r.prix_min, marge:r.marge_min, color:'#fbbf24', bg:'rgba(251,191,36,0.08)', border:'rgba(251,191,36,0.2)', icon:'📉' },
-    { label:'Prix optimal ⭐', price:r.prix_optimal, marge:r.marge_optimal, color:'#34d399', bg:'rgba(52,211,153,0.1)', border:'rgba(52,211,153,0.3)', icon:'🎯' },
-    { label:'Prix maximum', price:r.prix_max, marge:r.marge_max, color:'#a78bfa', bg:'rgba(167,139,250,0.08)', border:'rgba(167,139,250,0.2)', icon:'📈' },
+    { label:'Min', price:r.prix_min, marge:r.marge_min, color:'#fbbf24', border:'rgba(251,191,36,0.2)', bg:'rgba(251,191,36,0.06)', icon:'📉' },
+    { label:'Optimal ⭐', price:r.prix_optimal, marge:r.marge_optimal, color:'#34d399', border:'rgba(52,211,153,0.3)', bg:'rgba(52,211,153,0.08)', icon:'🎯' },
+    { label:'Max', price:r.prix_max, marge:r.marge_max, color:'#a78bfa', border:'rgba(167,139,250,0.2)', bg:'rgba(167,139,250,0.06)', icon:'📈' },
   ];
   c.innerHTML = `
-    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:16px">
-      ${tiers.map(t=>`
-        <div class="price-tier-card">
-          <div class="price-tier-inner" style="background:${t.bg};border:1px solid ${t.border}">
-            <div style="font-size:18px;margin-bottom:4px">${t.icon}</div>
-            <div class="price-value" style="color:${t.color}">€${t.price?.toFixed(2)??'—'}</div>
-            <div style="font-size:10px;color:rgba(255,255,255,0.4);margin-top:2px">${t.label}</div>
-            <div style="font-size:11px;font-weight:600;color:${t.color};margin-top:4px">${t.marge??''}</div>
-          </div>
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px">
+      ${tiers.map((t,i)=>`
+        <div style="background:${t.bg};border:1px solid ${t.border};border-radius:10px;padding:10px 8px;text-align:center;animation:price-flip 0.4s ${i*100}ms both">
+          <div style="font-size:15px;margin-bottom:3px">${t.icon}</div>
+          <div style="font-size:17px;font-weight:800;color:${t.color};letter-spacing:-0.01em">€${t.price?.toFixed(2)??'—'}</div>
+          <div style="font-size:9px;color:rgba(255,255,255,0.4);margin-top:2px">${t.label}</div>
+          <div style="font-size:10px;font-weight:600;color:${t.color};margin-top:3px">${t.marge??''}</div>
         </div>`).join('')}
     </div>
-    <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);border-radius:12px;padding:14px;margin-bottom:12px;animation:price-counter 0.35s 300ms both">
-      <p style="font-size:11px;color:rgba(255,255,255,0.4);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px">📊 Analyse</p>
-      <p style="font-size:13px;color:rgba(255,255,255,0.75);line-height:1.5">${r.explication??''}</p>
+    <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);border-radius:10px;padding:10px 12px;margin-bottom:8px;animation:price-counter 0.35s 300ms both">
+      <p style="font-size:10px;color:rgba(255,255,255,0.35);text-transform:uppercase;letter-spacing:.06em;margin-bottom:5px">📊 Analyse</p>
+      <p style="font-size:11px;color:rgba(255,255,255,0.7);line-height:1.5">${r.explication??''}</p>
     </div>
-    ${r.conseils?.length ? `
-    <div style="background:linear-gradient(135deg,rgba(167,139,250,0.06),rgba(52,211,153,0.03));border:1px solid rgba(167,139,250,0.15);border-radius:12px;padding:14px;animation:price-counter 0.35s 380ms both">
-      <p style="font-size:11px;color:rgba(255,255,255,0.4);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px">💡 Conseils</p>
-      ${r.conseils.map(c=>`<div class="price-advice-item" style="display:flex;gap:8px;margin-bottom:6px;font-size:12px;color:rgba(255,255,255,0.65)"><span style="color:#a78bfa;flex-shrink:0">→</span>${c}</div>`).join('')}
-    </div>` : ''}`;
+    ${r.conseils?.length ? `<div style="background:rgba(139,92,246,0.05);border:1px solid rgba(139,92,246,0.12);border-radius:10px;padding:10px 12px;animation:price-counter 0.35s 380ms both">
+      <p style="font-size:10px;color:rgba(255,255,255,0.35);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px">💡 Conseils</p>
+      ${r.conseils.slice(0,3).map(tip=>`<div style="display:flex;gap:6px;margin-bottom:5px;font-size:11px;color:rgba(255,255,255,0.6);line-height:1.4"><span style="color:#a78bfa;flex-shrink:0">→</span>${tip}</div>`).join('')}
+    </div>` : ''}
+    <p style="font-size:9px;color:rgba(255,255,255,0.2);text-align:center;margin-top:8px">⚠ Estimation IA — vérifie sur Vinted avant de fixer ton prix</p>`;
 }
 let GEMINI_KEY = null; // chargée depuis Supabase au démarrage
 let importedItems = [];
@@ -656,19 +632,14 @@ function renderProducts(){
     profitCell.textContent=`€${np.toFixed(2)}`;
     profitCell.style.color=np<0?'var(--danger)':'var(--accent)';
 
-    // Boutons Lot + 💰 Prix
+    // Bouton Lot uniquement
     const lotCell=document.createElement('div');
-    lotCell.style.cssText='display:flex;gap:6px;justify-content:center;align-items:center;';
+    lotCell.style.cssText='display:flex;justify-content:center;align-items:center;';
     const lotBtn=document.createElement('button');
     lotBtn.className='cat-lot-btn';
     lotBtn.innerHTML=`<i data-lucide="layers" style="width:11px;height:11px"></i> Lot`;
     lotBtn.addEventListener('click',()=>openLotPanel(p.id,lotBtn));
-    const priceBtn=document.createElement('button');
-    priceBtn.title='Estimateur de prix IA';
-    priceBtn.className='cat-price-btn-neon';
-    priceBtn.innerHTML='<span style="font-size:12px">💰</span><span style="font-size:10px;font-weight:700;letter-spacing:0.03em">Prix</span>';
-    priceBtn.addEventListener('click',()=>openPriceEstimator(p));
-    lotCell.append(priceBtn,lotBtn);
+    lotCell.appendChild(lotBtn);
 
     // Bouton supprimer
     const delCell=document.createElement('div');
@@ -1173,9 +1144,10 @@ function startApp(){
   }
   refreshDate();setInterval(refreshDate,30000);
   const si=document.getElementById('order-search');if(si){let t=null;si.addEventListener('input',e=>{orderSearchQuery=e.target.value;clearTimeout(t);t=setTimeout(renderOrders,120);});}
-  document.getElementById('btn-price-close')?.addEventListener('click', closePriceModal);
-  document.getElementById('btn-price-analyze')?.addEventListener('click', analyzePriceEstimate);
-  document.getElementById('btn-price-retry')?.addEventListener('click', resetPriceModal);
+  document.getElementById('btn-market-analyze')?.addEventListener('click', analyzeMarketInline);
+
+  document.getElementById('btn-price-close')?.addEventListener('click', ()=>{});
+  document.getElementById('btn-price-retry')?.addEventListener('click', resetMarketInline);
 
   // Import facture IA
   const btnImportInvoice = document.getElementById('btn-import-invoice');
