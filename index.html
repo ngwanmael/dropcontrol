@@ -345,13 +345,53 @@
       animation:price-modal-in 0.45s cubic-bezier(0.2,0.9,0.3,1) both;
     }
     .price-modal-card::before { content:'';position:absolute;inset:0;pointer-events:none;background-image:linear-gradient(rgba(139,92,246,0.04) 1px,transparent 1px),linear-gradient(90deg,rgba(139,92,246,0.04) 1px,transparent 1px);background-size:40px 40px;animation:grid-move 3s linear infinite; }
-    .price-chart-loader { position:relative;height:90px;margin:0 auto 20px;display:flex;align-items:flex-end;justify-content:center;gap:10px;padding:0 20px; }
-    .price-bar { flex:1;max-width:36px;border-radius:6px 6px 0 0;animation:price-bar-grow 0.6s cubic-bezier(0.2,0.9,0.3,1) both; }
-    .price-bar-1 { background:linear-gradient(to top,#fbbf24,rgba(251,191,36,0.3));animation-delay:0s; }
-    .price-bar-2 { background:linear-gradient(to top,#34d399,rgba(52,211,153,0.3));animation-delay:0.15s; }
-    .price-bar-3 { background:linear-gradient(to top,#a78bfa,rgba(167,139,250,0.3));animation-delay:0.3s; }
-    .price-bar-4 { background:linear-gradient(to top,#60a5fa,rgba(96,165,250,0.3));animation-delay:0.45s; }
-    .price-bar-5 { background:linear-gradient(to top,#34d399,rgba(52,211,153,0.3));animation-delay:0.6s; }
+    /* Prix estimator — loading neon neural network */
+    @keyframes node-pulse-1 { 0%,100%{r:5;opacity:0.5} 50%{r:8;opacity:1} }
+    @keyframes node-pulse-2 { 0%,100%{r:4;opacity:0.4} 50%{r:7;opacity:1} }
+    @keyframes node-pulse-3 { 0%,100%{r:6;opacity:0.6} 50%{r:9;opacity:1} }
+    @keyframes flow-dash { 0%{stroke-dashoffset:60} 100%{stroke-dashoffset:0} }
+    @keyframes neon-flicker { 0%,100%{opacity:1} 92%{opacity:1} 93%{opacity:0.4} 94%{opacity:1} 97%{opacity:0.6} 98%{opacity:1} }
+
+    .price-neural-loader {
+      width: 100%; height: 100px;
+      margin: 0 auto 16px;
+      position: relative;
+    }
+    .price-neural-loader svg {
+      width: 100%; height: 100%;
+      animation: neon-flicker 4s ease-in-out infinite;
+    }
+    .neon-line {
+      stroke-dasharray: 8 4;
+      animation: flow-dash 0.8s linear infinite;
+    }
+    .neon-line-2 { animation-delay: -0.4s; }
+    .neon-line-3 { animation-delay: -0.2s; }
+
+    .cat-price-btn-neon {
+      display: inline-flex; align-items: center; gap: 5px;
+      padding: 6px 11px; border-radius: 9px; cursor: pointer;
+      font-size: 11px; font-weight: 700; white-space: nowrap;
+      background: rgba(167,139,250,0.08);
+      border: 1px solid rgba(167,139,250,0.3);
+      color: #a78bfa;
+      box-shadow: 0 0 8px rgba(167,139,250,0.15), inset 0 0 8px rgba(167,139,250,0.04);
+      transition: all 0.2s;
+      position: relative; overflow: hidden;
+    }
+    .cat-price-btn-neon::before {
+      content: ''; position: absolute; inset: 0;
+      background: linear-gradient(135deg, rgba(167,139,250,0.1), transparent);
+      pointer-events: none;
+    }
+    .cat-price-btn-neon:hover {
+      background: rgba(167,139,250,0.15);
+      border-color: rgba(167,139,250,0.5);
+      box-shadow: 0 0 16px rgba(167,139,250,0.35), inset 0 0 12px rgba(167,139,250,0.08);
+      transform: translateY(-1px);
+      color: #c4b5fd;
+    }
+    .cat-price-btn-neon:active { transform: scale(0.95); }
     .price-tier-card { perspective:600px;animation:price-flip 0.5s cubic-bezier(0.2,0.9,0.3,1) both; }
     .price-tier-card:nth-child(1){animation-delay:0ms} .price-tier-card:nth-child(2){animation-delay:120ms} .price-tier-card:nth-child(3){animation-delay:240ms}
     .price-tier-inner { border-radius:12px;padding:14px 10px;text-align:center;transition:transform 0.2s,box-shadow 0.2s; }
@@ -908,10 +948,10 @@
       <a id="btn-products"  class="nav-item flex items-center gap-3 px-3 py-2.5 text-sm opacity-60">Products &amp; Margin</a>
       <a id="btn-orders"    class="nav-item flex items-center gap-3 px-3 py-2.5 text-sm opacity-60">Orders</a>
     </nav>
-    <button id="btn-show-shortcuts" class="shortcut-hint-btn mt-4">
-      <i data-lucide="keyboard" style="width:13px;height:13px;flex-shrink:0"></i>
-      <span style="flex:1">Raccourcis</span>
-      <span class="kbd">?</span>
+    <button id="btn-show-shortcuts" class="shortcut-hint-btn mt-4" style="display:flex;align-items:center;gap:8px;padding:9px 12px;border-radius:10px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.07);color:rgba(255,255,255,0.4);font-size:12px;font-weight:500;cursor:pointer;transition:all 0.18s;width:100%">
+      <i data-lucide="keyboard" style="width:14px;height:14px;flex-shrink:0;color:rgba(255,255,255,0.5)"></i>
+      <span style="flex:1;text-align:left">Raccourcis</span>
+      <span class="kbd" style="font-size:11px;padding:2px 6px">?</span>
     </button>
   </aside>
 
@@ -1233,20 +1273,37 @@
           <label style="font-size:11px;color:rgba(255,255,255,0.4);text-transform:uppercase;letter-spacing:.06em;display:block;margin-bottom:6px">Détails supplémentaires (optionnel)</label>
           <input type="text" id="price-details" placeholder="ex: acier inoxydable, couleur noir, 5mm..." style="width:100%;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:10px;color:white;padding:9px 12px;font-size:13px;outline:none;box-sizing:border-box">
         </div>
-        <button id="btn-price-analyze" class="btn-ai" style="margin-top:4px">
+        <button id="btn-price-analyze" class="btn-ai" style="margin-top:4px;background:linear-gradient(135deg,#6d28d9,#4c1d95,#5b21b6,#7c3aed);box-shadow:0 0 20px rgba(139,92,246,0.3),0 0 40px rgba(139,92,246,0.1)">
           <i data-lucide="sparkles" class="ai-icon"></i>
-          <span class="btn-ai-label">Analyser le marché</span>
+          <span class="btn-ai-label">Analyse marché</span>
         </button>
       </div>
 
-      <!-- Loading — graphique animé -->
+      <!-- Loading — Neural network neon -->
       <div id="price-loading" class="hidden" style="position:relative;z-index:1;text-align:center;padding:8px 0">
-        <div class="price-chart-loader" id="price-chart-bars">
-          <!-- Les barres sont générées dynamiquement avec des hauteurs aléatoires -->
+        <div class="price-neural-loader">
+          <svg viewBox="0 0 320 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <line x1="60" y1="30" x2="160" y2="20" stroke="#a78bfa" stroke-width="1" stroke-opacity="0.3" class="neon-line"/>
+            <line x1="60" y1="30" x2="160" y2="50" stroke="#34d399" stroke-width="1" stroke-opacity="0.3" class="neon-line neon-line-2"/>
+            <line x1="60" y1="70" x2="160" y2="50" stroke="#60a5fa" stroke-width="1" stroke-opacity="0.3" class="neon-line neon-line-3"/>
+            <line x1="60" y1="70" x2="160" y2="80" stroke="#a78bfa" stroke-width="1" stroke-opacity="0.3" class="neon-line"/>
+            <line x1="160" y1="20" x2="260" y2="30" stroke="#34d399" stroke-width="1" stroke-opacity="0.3" class="neon-line neon-line-2"/>
+            <line x1="160" y1="50" x2="260" y2="30" stroke="#a78bfa" stroke-width="1" stroke-opacity="0.3" class="neon-line"/>
+            <line x1="160" y1="50" x2="260" y2="70" stroke="#60a5fa" stroke-width="1" stroke-opacity="0.3" class="neon-line neon-line-3"/>
+            <line x1="160" y1="80" x2="260" y2="70" stroke="#34d399" stroke-width="1" stroke-opacity="0.3" class="neon-line neon-line-2"/>
+            <circle cx="60" cy="30" r="5" fill="#a78bfa" fill-opacity="0.15" stroke="#a78bfa" stroke-width="1.5"><animate attributeName="r" values="5;8;5" dur="2s" repeatCount="indefinite"/><animate attributeName="stroke-opacity" values="0.5;1;0.5" dur="2s" repeatCount="indefinite"/></circle>
+            <circle cx="60" cy="70" r="5" fill="#34d399" fill-opacity="0.15" stroke="#34d399" stroke-width="1.5"><animate attributeName="r" values="6;9;6" dur="2.5s" repeatCount="indefinite"/><animate attributeName="stroke-opacity" values="0.4;1;0.4" dur="2.5s" repeatCount="indefinite"/></circle>
+            <circle cx="160" cy="20" r="4" fill="#60a5fa" fill-opacity="0.15" stroke="#60a5fa" stroke-width="1.5"><animate attributeName="r" values="4;7;4" dur="1.8s" repeatCount="indefinite"/><animate attributeName="stroke-opacity" values="0.5;1;0.5" dur="1.8s" repeatCount="indefinite"/></circle>
+            <circle cx="160" cy="50" r="7" fill="#a78bfa" fill-opacity="0.2" stroke="#a78bfa" stroke-width="2"><animate attributeName="r" values="7;10;7" dur="2.2s" repeatCount="indefinite"/><animate attributeName="stroke-opacity" values="0.6;1;0.6" dur="2.2s" repeatCount="indefinite"/></circle>
+            <circle cx="160" cy="80" r="4" fill="#34d399" fill-opacity="0.15" stroke="#34d399" stroke-width="1.5"><animate attributeName="r" values="4;7;4" dur="3s" repeatCount="indefinite"/><animate attributeName="stroke-opacity" values="0.4;1;0.4" dur="3s" repeatCount="indefinite"/></circle>
+            <circle cx="260" cy="30" r="5" fill="#34d399" fill-opacity="0.15" stroke="#34d399" stroke-width="1.5"><animate attributeName="r" values="5;8;5" dur="2.8s" repeatCount="indefinite"/><animate attributeName="stroke-opacity" values="0.5;1;0.5" dur="2.8s" repeatCount="indefinite"/></circle>
+            <circle cx="260" cy="70" r="5" fill="#a78bfa" fill-opacity="0.15" stroke="#a78bfa" stroke-width="1.5"><animate attributeName="r" values="6;9;6" dur="2s" repeatCount="indefinite"/><animate attributeName="stroke-opacity" values="0.4;1;0.4" dur="2s" repeatCount="indefinite"/></circle>
+            <circle cx="160" cy="50" r="20" fill="rgba(167,139,250,0.04)"><animate attributeName="r" values="18;24;18" dur="2.2s" repeatCount="indefinite"/></circle>
+          </svg>
         </div>
         <div class="ai-progress-bar"><div class="ai-progress-fill" id="price-progress-fill"></div></div>
         <p class="ai-stage-text" id="price-stage-text">Analyse du marché Vinted…</p>
-        <p class="ai-stage-sub">Gemini 2.5 · Estimation intelligente</p>
+        <p class="ai-stage-sub">Gemini 2.5 · Marchés FR/EU · Estimation intelligente</p>
       </div>
 
       <div id="price-results" class="hidden" style="position:relative;z-index:1">

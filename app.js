@@ -101,21 +101,6 @@ async function analyzePriceEstimate() {
   document.getElementById('price-form').classList.add('hidden');
   document.getElementById('price-loading').classList.remove('hidden');
 
-  // Génère les barres animées avec hauteurs aléatoires
-  const bars = document.getElementById('price-chart-bars');
-  if (bars) {
-    const heights = [45,70,55,85,60];
-    const classes = ['price-bar-1','price-bar-2','price-bar-3','price-bar-4','price-bar-5'];
-    bars.innerHTML = heights.map((h,i) => `<div class="price-bar ${classes[i]}" style="height:${h}px"></div>`).join('');
-    // Les barres re-animent en boucle
-    setInterval(() => {
-      bars.querySelectorAll('.price-bar').forEach(b => {
-        const newH = 30 + Math.random()*60;
-        b.style.height = newH+'px';
-      });
-    }, 900);
-  }
-
   // Barre de progression
   const fill = document.getElementById('price-progress-fill');
   if (fill) { fill.style.animation='none'; void fill.offsetWidth; fill.style.animation='ai-progress 6s cubic-bezier(0.1,0.4,0.2,1) forwards'; }
@@ -130,19 +115,21 @@ async function analyzePriceEstimate() {
   }, 1400);
 
   try {
-    const prompt = `Tu es un expert en revente sur Vinted France en 2026. Analyse ce produit et suggère une stratégie de prix réaliste.
+    const prompt = `Tu es un expert en revente de seconde main en France en 2026. Tu connais les prix pratiqués sur Vinted, Leboncoin, eBay France, Depop et les marchés aux puces.
 
 Article : ${p.name}
-Coût d'achat : €${(p.cost||0).toFixed(2)} par unité
+Coût d'achat réel : €${(p.cost||0).toFixed(2)} par unité
 Prix testé actuellement : €${(p.selling||0).toFixed(2)}
-Catégorie Vinted : ${cat}
+Catégorie : ${cat}
 État : ${etat}
 ${det ? `Détails : ${det}` : ''}
 
-Donne une recommandation de prix de vente sur Vinted France, en tenant compte du marché de la revente de ce type d'article, de la concurrence, et de la marge raisonnable pour un petit revendeur.
+IMPORTANT : Sois honnête et objectif. Si tu n'as pas assez d'information sur cet article précis, dis-le clairement dans l'explication plutôt que d'inventer des chiffres. Base-toi sur des articles similaires si nécessaire. Les prix doivent être réalistes pour le marché français de la revente en 2026.
+
+Donne une recommandation de prix de vente sur Vinted France, en tenant compte de l'ensemble du marché de revente français (Vinted, Leboncoin, eBay), de la concurrence, et d'une marge raisonnable pour un petit revendeur.
 
 Réponds UNIQUEMENT en JSON valide sans backticks ni texte autour :
-{"prix_min":4.90,"prix_optimal":7.90,"prix_max":11.90,"marge_min":"72%","marge_optimal":"84%","marge_max":"91%","explication":"Texte court du raisonnement (2-3 phrases max)","conseils":["Conseil 1","Conseil 2","Conseil 3"]}`;
+{"prix_min":4.90,"prix_optimal":7.90,"prix_max":11.90,"marge_min":"72%","marge_optimal":"84%","marge_max":"91%","explication":"Texte honnête du raisonnement (2-3 phrases, mentionne si données limitées)","conseils":["Conseil 1","Conseil 2","Conseil 3"]}`;
 
     const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_KEY}`, {
       method:'POST', headers:{'Content-Type':'application/json'},
@@ -678,11 +665,9 @@ function renderProducts(){
     lotBtn.addEventListener('click',()=>openLotPanel(p.id,lotBtn));
     const priceBtn=document.createElement('button');
     priceBtn.title='Estimateur de prix IA';
-    priceBtn.style.cssText='padding:5px 8px;border-radius:8px;cursor:pointer;font-size:13px;background:linear-gradient(135deg,rgba(251,191,36,0.12),rgba(52,211,153,0.06));border:1px solid rgba(251,191,36,0.25);transition:all 0.18s;line-height:1;';
-    priceBtn.textContent='💰';
+    priceBtn.className='cat-price-btn-neon';
+    priceBtn.innerHTML='<span style="font-size:12px">💰</span><span style="font-size:10px;font-weight:700;letter-spacing:0.03em">Prix</span>';
     priceBtn.addEventListener('click',()=>openPriceEstimator(p));
-    priceBtn.addEventListener('mouseover',()=>priceBtn.style.transform='scale(1.15)');
-    priceBtn.addEventListener('mouseout',()=>priceBtn.style.transform='');
     lotCell.append(priceBtn,lotBtn);
 
     // Bouton supprimer
