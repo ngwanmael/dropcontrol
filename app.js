@@ -59,7 +59,145 @@ function initRealtime() {
     .subscribe();
 }
 
-// ─── GEMINI API — Import Facture ─────────────────────────
+// ─── ESTIMATEUR DE PRIX IA ───────────────────────────────
+let currentPriceProduct = null;
+
+function closePriceModal() {
+  const modal = document.getElementById('price-estimator-modal');
+  const card  = modal?.querySelector('.price-modal-card');
+  if (!modal) return;
+  if (card) card.style.animation = 'price-modal-out 0.3s cubic-bezier(0.4,0,1,1) both';
+  modal.style.animation = 'ai-backdrop-out 0.3s ease both';
+  setTimeout(() => { hideModal(modal); modal.style.animation=''; if(card) card.style.animation=''; }, 280);
+}
+
+function resetPriceModal() {
+  document.getElementById('price-form').classList.remove('hidden');
+  document.getElementById('price-loading').classList.add('hidden');
+  document.getElementById('price-results').classList.add('hidden');
+  document.getElementById('price-error').classList.add('hidden');
+  if (window._priceStageInterval) clearInterval(window._priceStageInterval);
+}
+
+function openPriceEstimator(product) {
+  currentPriceProduct = product;
+  resetPriceModal();
+  document.getElementById('price-product-name').textContent = product.name;
+  document.getElementById('price-product-cost').textContent = `Coût d'achat : €${(product.cost||0).toFixed(2)}/u · Prix actuel : €${(product.selling||0).toFixed(2)}`;
+  document.getElementById('price-details').value = '';
+  showModal(document.getElementById('price-estimator-modal'));
+  const card = document.querySelector('#price-estimator-modal .price-modal-card');
+  if (card) { card.style.animation='none'; void card.offsetWidth; card.style.animation=''; }
+  if (window.lucide) lucide.createIcons();
+}
+
+async function analyzePriceEstimate() {
+  if (!GEMINI_KEY) { showToast('Clé Gemini non configurée','error'); return; }
+  const p = currentPriceProduct;
+  const etat = document.getElementById('price-etat').value;
+  const cat  = document.getElementById('price-categorie').value;
+  const det  = document.getElementById('price-details').value.trim();
+
+  document.getElementById('price-form').classList.add('hidden');
+  document.getElementById('price-loading').classList.remove('hidden');
+
+  // Génère les barres animées avec hauteurs aléatoires
+  const bars = document.getElementById('price-chart-bars');
+  if (bars) {
+    const heights = [45,70,55,85,60];
+    const classes = ['price-bar-1','price-bar-2','price-bar-3','price-bar-4','price-bar-5'];
+    bars.innerHTML = heights.map((h,i) => `<div class="price-bar ${classes[i]}" style="height:${h}px"></div>`).join('');
+    // Les barres re-animent en boucle
+    setInterval(() => {
+      bars.querySelectorAll('.price-bar').forEach(b => {
+        const newH = 30 + Math.random()*60;
+        b.style.height = newH+'px';
+      });
+    }, 900);
+  }
+
+  // Barre de progression
+  const fill = document.getElementById('price-progress-fill');
+  if (fill) { fill.style.animation='none'; void fill.offsetWidth; fill.style.animation='ai-progress 6s cubic-bezier(0.1,0.4,0.2,1) forwards'; }
+
+  // Messages cycliques
+  const stages = ['Analyse du marché Vinted…','Étude de la concurrence…','Calcul des marges optimales…','Recommandation en cours…'];
+  let sIdx = 0;
+  const stEl = document.getElementById('price-stage-text');
+  window._priceStageInterval = setInterval(() => {
+    sIdx = (sIdx+1) % stages.length;
+    if (stEl) { stEl.style.opacity='0'; setTimeout(()=>{ stEl.textContent=stages[sIdx]; stEl.style.opacity='1'; },200); }
+  }, 1400);
+
+  try {
+    const prompt = `Tu es un expert en revente sur Vinted France en 2026. Analyse ce produit et suggère une stratégie de prix réaliste.
+
+Article : ${p.name}
+Coût d'achat : €${(p.cost||0).toFixed(2)} par unité
+Prix testé actuellement : €${(p.selling||0).toFixed(2)}
+Catégorie Vinted : ${cat}
+État : ${etat}
+${det ? `Détails : ${det}` : ''}
+
+Donne une recommandation de prix de vente sur Vinted France, en tenant compte du marché de la revente de ce type d'article, de la concurrence, et de la marge raisonnable pour un petit revendeur.
+
+Réponds UNIQUEMENT en JSON valide sans backticks ni texte autour :
+{"prix_min":4.90,"prix_optimal":7.90,"prix_max":11.90,"marge_min":"72%","marge_optimal":"84%","marge_max":"91%","explication":"Texte court du raisonnement (2-3 phrases max)","conseils":["Conseil 1","Conseil 2","Conseil 3"]}`;
+
+    const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_KEY}`, {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ contents:[{parts:[{text:prompt}]}], generationConfig:{temperature:0.3} })
+    });
+    if (!res.ok) throw new Error(`Erreur API: ${res.status}`);
+    const data = await res.json();
+    const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
+    if (!text) throw new Error('Réponse vide');
+    const clean = text.replace(/```json|```/g,'').trim();
+    const result = JSON.parse(clean);
+
+    clearInterval(window._priceStageInterval);
+    document.getElementById('price-loading').classList.add('hidden');
+    document.getElementById('price-results').classList.remove('hidden');
+    showPriceResults(result, p);
+
+  } catch(e) {
+    clearInterval(window._priceStageInterval);
+    console.error('Price estimator error:', e);
+    document.getElementById('price-loading').classList.add('hidden');
+    document.getElementById('price-error').classList.remove('hidden');
+    document.getElementById('price-error-msg').textContent = e.message || 'Erreur lors de l\'analyse';
+  }
+}
+
+function showPriceResults(r, p) {
+  const c = document.getElementById('price-results-content');
+  const tiers = [
+    { label:'Prix minimum', price:r.prix_min, marge:r.marge_min, color:'#fbbf24', bg:'rgba(251,191,36,0.08)', border:'rgba(251,191,36,0.2)', icon:'📉' },
+    { label:'Prix optimal ⭐', price:r.prix_optimal, marge:r.marge_optimal, color:'#34d399', bg:'rgba(52,211,153,0.1)', border:'rgba(52,211,153,0.3)', icon:'🎯' },
+    { label:'Prix maximum', price:r.prix_max, marge:r.marge_max, color:'#a78bfa', bg:'rgba(167,139,250,0.08)', border:'rgba(167,139,250,0.2)', icon:'📈' },
+  ];
+  c.innerHTML = `
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:16px">
+      ${tiers.map(t=>`
+        <div class="price-tier-card">
+          <div class="price-tier-inner" style="background:${t.bg};border:1px solid ${t.border}">
+            <div style="font-size:18px;margin-bottom:4px">${t.icon}</div>
+            <div class="price-value" style="color:${t.color}">€${t.price?.toFixed(2)??'—'}</div>
+            <div style="font-size:10px;color:rgba(255,255,255,0.4);margin-top:2px">${t.label}</div>
+            <div style="font-size:11px;font-weight:600;color:${t.color};margin-top:4px">${t.marge??''}</div>
+          </div>
+        </div>`).join('')}
+    </div>
+    <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);border-radius:12px;padding:14px;margin-bottom:12px;animation:price-counter 0.35s 300ms both">
+      <p style="font-size:11px;color:rgba(255,255,255,0.4);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px">📊 Analyse</p>
+      <p style="font-size:13px;color:rgba(255,255,255,0.75);line-height:1.5">${r.explication??''}</p>
+    </div>
+    ${r.conseils?.length ? `
+    <div style="background:linear-gradient(135deg,rgba(167,139,250,0.06),rgba(52,211,153,0.03));border:1px solid rgba(167,139,250,0.15);border-radius:12px;padding:14px;animation:price-counter 0.35s 380ms both">
+      <p style="font-size:11px;color:rgba(255,255,255,0.4);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px">💡 Conseils</p>
+      ${r.conseils.map(c=>`<div class="price-advice-item" style="display:flex;gap:8px;margin-bottom:6px;font-size:12px;color:rgba(255,255,255,0.65)"><span style="color:#a78bfa;flex-shrink:0">→</span>${c}</div>`).join('')}
+    </div>` : ''}`;
+}
 let GEMINI_KEY = null; // chargée depuis Supabase au démarrage
 let importedItems = [];
 
@@ -549,6 +687,11 @@ function renderProducts(){
     delBtn.innerHTML=`<i data-lucide="trash-2" style="width:14px;height:14px"></i>`;
     delBtn.addEventListener('click',()=>openDeleteModal('product',p.id));
     delCell.appendChild(delBtn);
+
+    const priceCell=document.createElement('div');
+    priceCell.style.cssText='display:flex;align-items:center;justify-content:center;';
+    priceCell.innerHTML=`<button class="cat-price-btn" title="Estimateur de prix IA" style="display:inline-flex;align-items:center;gap:4px;padding:5px 10px;border-radius:8px;cursor:pointer;font-size:11px;font-weight:700;background:linear-gradient(135deg,rgba(251,191,36,0.1),rgba(52,211,153,0.08));color:#fbbf24;border:1px solid rgba(251,191,36,0.2);transition:all 0.18s;white-space:nowrap">💰 Prix</button>`;
+    priceCell.querySelector('.cat-price-btn').addEventListener('click',()=>openPriceEstimator(p));
 
     row.append(nameCell,costCell,priceCell,marginCell,profitCell,lotCell,delCell);
 
@@ -1043,6 +1186,10 @@ function startApp(){
   }
   refreshDate();setInterval(refreshDate,30000);
   const si=document.getElementById('order-search');if(si){let t=null;si.addEventListener('input',e=>{orderSearchQuery=e.target.value;clearTimeout(t);t=setTimeout(renderOrders,120);});}
+  document.getElementById('btn-price-close')?.addEventListener('click', closePriceModal);
+  document.getElementById('btn-price-analyze')?.addEventListener('click', analyzePriceEstimate);
+  document.getElementById('btn-price-retry')?.addEventListener('click', resetPriceModal);
+
   // Import facture IA
   const btnImportInvoice = document.getElementById('btn-import-invoice');
   if (btnImportInvoice) btnImportInvoice.addEventListener('click', (e) => {

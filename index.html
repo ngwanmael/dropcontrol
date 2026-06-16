@@ -327,6 +327,39 @@
     .shortcut-desc { font-size:13px; color:rgba(255,255,255,0.7); }
     .shortcut-keys { display:flex; align-items:center; gap:4px; }
     .shortcut-sep { font-size:10px; color:rgba(255,255,255,0.2); }
+
+    /* Prix estimator — animations distinctes */
+    @keyframes price-modal-in { from{opacity:0;filter:blur(12px);transform:scale(1.04)} to{opacity:1;filter:blur(0);transform:scale(1)} }
+    @keyframes price-modal-out { from{opacity:1;filter:blur(0);transform:scale(1)} to{opacity:0;filter:blur(12px);transform:scale(1.04)} }
+    @keyframes price-bar-grow { from{width:0;opacity:0} to{opacity:1} }
+    @keyframes price-flip { 0%{opacity:0;transform:rotateY(-90deg) scale(0.8)} 60%{transform:rotateY(10deg)} 100%{opacity:1;transform:rotateY(0) scale(1)} }
+    @keyframes price-counter { 0%{opacity:0;transform:translateY(-8px)} 100%{opacity:1;transform:none} }
+    @keyframes price-digit-roll { 0%{transform:translateY(-100%);opacity:0} 100%{transform:translateY(0);opacity:1} }
+    @keyframes price-glow-pulse { 0%,100%{box-shadow:0 0 0 0 rgba(167,139,250,0.3)} 50%{box-shadow:0 0 0 12px rgba(167,139,250,0)} }
+
+    .price-modal-card {
+      background:linear-gradient(145deg,#13131a,#0d0d14);
+      border:1px solid rgba(139,92,246,0.25);
+      box-shadow:0 0 60px rgba(139,92,246,0.12),0 24px 80px rgba(0,0,0,0.8),inset 0 1px 0 rgba(255,255,255,0.05);
+      border-radius:20px;position:relative;overflow:hidden;
+      animation:price-modal-in 0.45s cubic-bezier(0.2,0.9,0.3,1) both;
+    }
+    .price-modal-card::before { content:'';position:absolute;inset:0;pointer-events:none;background-image:linear-gradient(rgba(139,92,246,0.04) 1px,transparent 1px),linear-gradient(90deg,rgba(139,92,246,0.04) 1px,transparent 1px);background-size:40px 40px;animation:grid-move 3s linear infinite; }
+    .price-chart-loader { position:relative;height:90px;margin:0 auto 20px;display:flex;align-items:flex-end;justify-content:center;gap:10px;padding:0 20px; }
+    .price-bar { flex:1;max-width:36px;border-radius:6px 6px 0 0;animation:price-bar-grow 0.6s cubic-bezier(0.2,0.9,0.3,1) both; }
+    .price-bar-1 { background:linear-gradient(to top,#fbbf24,rgba(251,191,36,0.3));animation-delay:0s; }
+    .price-bar-2 { background:linear-gradient(to top,#34d399,rgba(52,211,153,0.3));animation-delay:0.15s; }
+    .price-bar-3 { background:linear-gradient(to top,#a78bfa,rgba(167,139,250,0.3));animation-delay:0.3s; }
+    .price-bar-4 { background:linear-gradient(to top,#60a5fa,rgba(96,165,250,0.3));animation-delay:0.45s; }
+    .price-bar-5 { background:linear-gradient(to top,#34d399,rgba(52,211,153,0.3));animation-delay:0.6s; }
+    .price-tier-card { perspective:600px;animation:price-flip 0.5s cubic-bezier(0.2,0.9,0.3,1) both; }
+    .price-tier-card:nth-child(1){animation-delay:0ms} .price-tier-card:nth-child(2){animation-delay:120ms} .price-tier-card:nth-child(3){animation-delay:240ms}
+    .price-tier-inner { border-radius:12px;padding:14px 10px;text-align:center;transition:transform 0.2s,box-shadow 0.2s; }
+    .price-tier-inner:hover { transform:translateY(-4px) scale(1.03); }
+    .price-value { font-size:22px;font-weight:800;letter-spacing:-0.02em;animation:price-digit-roll 0.4s cubic-bezier(0.2,0.9,0.3,1) both; }
+    .price-advice-item { animation:price-counter 0.35s cubic-bezier(0.2,0.9,0.3,1) both; }
+    .price-advice-item:nth-child(1){animation-delay:400ms} .price-advice-item:nth-child(2){animation-delay:520ms} .price-advice-item:nth-child(3){animation-delay:640ms}
+
     /* ══════════════════════════════════════════════
        BOUTON IA — Style premium animé
     ══════════════════════════════════════════════ */
@@ -1145,6 +1178,89 @@
         <p style="color:#f87171;font-size:14px;font-weight:500;margin-bottom:4px" id="import-error-msg">Impossible d'analyser cette facture</p>
         <p style="color:rgba(255,255,255,0.25);font-size:12px;margin-bottom:16px">Essaie avec une photo plus nette ou un PDF</p>
         <button onclick="resetImportModal()" style="color:#a78bfa;font-size:13px;background:none;border:none;cursor:pointer;text-decoration:underline">↩ Réessayer</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="price-estimator-modal" class="fixed inset-0 z-[400] hidden items-center justify-center ai-modal-bg p-4">
+    <div class="price-modal-card p-6 w-full max-w-lg" style="position:relative;z-index:1">
+      <div class="flex items-center justify-between mb-5" style="position:relative;z-index:1">
+        <div class="flex items-center gap-3">
+          <div style="width:40px;height:40px;border-radius:12px;background:linear-gradient(135deg,rgba(167,139,250,0.2),rgba(52,211,153,0.1));border:1px solid rgba(167,139,250,0.3);display:flex;align-items:center;justify-content:center;font-size:20px">💰</div>
+          <div>
+            <div class="ai-modal-title">Estimateur de Prix</div>
+            <div style="display:flex;align-items:center;gap:6px;margin-top:2px">
+              <span class="ai-badge">Gemini 2.5</span>
+              <span style="font-size:11px;color:rgba(255,255,255,0.3)">Analyse marché Vinted</span>
+            </div>
+          </div>
+        </div>
+        <button id="btn-price-close" style="padding:8px;border-radius:10px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);color:rgba(255,255,255,0.4);cursor:pointer;transition:all 0.2s" onmouseover="this.style.background='rgba(255,255,255,0.08)';this.style.color='white'" onmouseout="this.style.background='rgba(255,255,255,0.04)';this.style.color='rgba(255,255,255,0.4)'">
+          <i data-lucide="x" style="width:16px;height:16px"></i>
+        </button>
+      </div>
+
+      <div id="price-form" style="position:relative;z-index:1">
+        <div style="background:linear-gradient(135deg,rgba(167,139,250,0.06),rgba(52,211,153,0.03));border:1px solid rgba(167,139,250,0.15);border-radius:12px;padding:14px;margin-bottom:16px">
+          <p style="font-size:11px;color:rgba(255,255,255,0.4);text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px">Article analysé</p>
+          <p id="price-product-name" style="font-size:15px;font-weight:600;color:white"></p>
+          <p id="price-product-cost" style="font-size:12px;color:rgba(255,255,255,0.4);margin-top:2px"></p>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px">
+          <div>
+            <label style="font-size:11px;color:rgba(255,255,255,0.4);text-transform:uppercase;letter-spacing:.06em;display:block;margin-bottom:6px">État</label>
+            <select id="price-etat" style="width:100%;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:10px;color:white;padding:9px 12px;font-size:13px;outline:none;cursor:pointer">
+              <option value="Neuf">Neuf / Jamais porté</option>
+              <option value="Très bon état">Très bon état</option>
+              <option value="Bon état">Bon état</option>
+              <option value="Satisfaisant">Satisfaisant</option>
+            </select>
+          </div>
+          <div>
+            <label style="font-size:11px;color:rgba(255,255,255,0.4);text-transform:uppercase;letter-spacing:.06em;display:block;margin-bottom:6px">Catégorie</label>
+            <select id="price-categorie" style="width:100%;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:10px;color:white;padding:9px 12px;font-size:13px;outline:none;cursor:pointer">
+              <option value="Bijoux / Accessoires">Bijoux / Accessoires</option>
+              <option value="Vêtements femme">Vêtements femme</option>
+              <option value="Vêtements homme">Vêtements homme</option>
+              <option value="Chaussures">Chaussures</option>
+              <option value="Sacs">Sacs</option>
+              <option value="Décoration">Décoration</option>
+              <option value="Autre">Autre</option>
+            </select>
+          </div>
+        </div>
+        <div style="margin-bottom:16px">
+          <label style="font-size:11px;color:rgba(255,255,255,0.4);text-transform:uppercase;letter-spacing:.06em;display:block;margin-bottom:6px">Détails supplémentaires (optionnel)</label>
+          <input type="text" id="price-details" placeholder="ex: acier inoxydable, couleur noir, 5mm..." style="width:100%;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:10px;color:white;padding:9px 12px;font-size:13px;outline:none;box-sizing:border-box">
+        </div>
+        <button id="btn-price-analyze" class="btn-ai" style="margin-top:4px">
+          <i data-lucide="sparkles" class="ai-icon"></i>
+          <span class="btn-ai-label">Analyser le marché</span>
+        </button>
+      </div>
+
+      <!-- Loading — graphique animé -->
+      <div id="price-loading" class="hidden" style="position:relative;z-index:1;text-align:center;padding:8px 0">
+        <div class="price-chart-loader" id="price-chart-bars">
+          <!-- Les barres sont générées dynamiquement avec des hauteurs aléatoires -->
+        </div>
+        <div class="ai-progress-bar"><div class="ai-progress-fill" id="price-progress-fill"></div></div>
+        <p class="ai-stage-text" id="price-stage-text">Analyse du marché Vinted…</p>
+        <p class="ai-stage-sub">Gemini 2.5 · Estimation intelligente</p>
+      </div>
+
+      <div id="price-results" class="hidden" style="position:relative;z-index:1">
+        <div id="price-results-content"></div>
+        <p style="font-size:10px;color:rgba(255,255,255,0.2);text-align:center;margin-top:14px;line-height:1.4">⚠ Estimation basée sur la connaissance générale du marché — vérifie sur Vinted avant de fixer ton prix</p>
+        <button id="btn-price-retry" style="display:block;margin:10px auto 0;color:#a78bfa;font-size:12px;background:none;border:none;cursor:pointer;text-decoration:underline">↩ Nouvelle analyse</button>
+      </div>
+
+      <div id="price-error" class="hidden" style="text-align:center;padding:32px 0;position:relative;z-index:1">
+        <div style="width:48px;height:48px;border-radius:14px;background:rgba(248,113,113,0.1);border:1px solid rgba(248,113,113,0.2);display:flex;align-items:center;justify-content:center;margin:0 auto 12px">
+          <i data-lucide="alert-triangle" style="width:22px;height:22px;color:#f87171"></i>
+        </div>
+        <p style="color:#f87171;font-size:14px;font-weight:500;margin-bottom:4px" id="price-error-msg">Erreur lors de l'analyse</p>
+        <button onclick="resetPriceModal()" style="color:#a78bfa;font-size:13px;background:none;border:none;cursor:pointer;text-decoration:underline">↩ Réessayer</button>
       </div>
     </div>
   </div>
