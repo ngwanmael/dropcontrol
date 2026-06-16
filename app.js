@@ -69,12 +69,16 @@ function resetMarketInline() {
 
 async function analyzeMarketInline() {
   if (!GEMINI_KEY) { showToast('Clé Gemini non configurée','error'); return; }
-  const name    = document.getElementById('inp-product-name')?.value.trim() || 'Article';
-  const cost    = parseFloat(document.getElementById('inp-cost')?.value) || 0;
+  const name    = document.getElementById('inp-product-name')?.value.trim();
+  const cost    = parseFloat(document.getElementById('inp-cost')?.value);
   const selling = parseFloat(document.getElementById('inp-selling')?.value) || 0;
   const etat    = document.getElementById('market-etat')?.value || 'Neuf';
   const cat     = document.getElementById('market-cat')?.value || 'Bijoux / Accessoires';
   const det     = document.getElementById('market-details')?.value.trim() || '';
+
+  // Validation obligatoire
+  if (!name) { showToast('Entrez d\'abord le nom du produit 👆','warn'); document.getElementById('inp-product-name')?.focus(); return; }
+  if (!cost || cost <= 0) { showToast('Entrez d\'abord le prix d\'achat 👆','warn'); document.getElementById('inp-cost')?.focus(); return; }
 
   resetMarketInline();
   document.getElementById('market-loading')?.classList.remove('hidden');
@@ -137,21 +141,27 @@ function showMarketResultsInline(r) {
   const c = document.getElementById('market-results');
   if (!c) return;
   const tiers = [
-    { label:'Min', price:r.prix_min, marge:r.marge_min, color:'#fbbf24', border:'rgba(251,191,36,0.2)', bg:'rgba(251,191,36,0.06)', icon:'📉' },
-    { label:'Optimal ⭐', price:r.prix_optimal, marge:r.marge_optimal, color:'#34d399', border:'rgba(52,211,153,0.3)', bg:'rgba(52,211,153,0.08)', icon:'🎯' },
-    { label:'Max', price:r.prix_max, marge:r.marge_max, color:'#a78bfa', border:'rgba(167,139,250,0.2)', bg:'rgba(167,139,250,0.06)', icon:'📈' },
+    { label:'Min', price:r.prix_min, marge:r.marge_min, color:'#fbbf24', border:'rgba(251,191,36,0.25)', bg:'rgba(251,191,36,0.07)', icon:'📉' },
+    { label:'Optimal ⭐', price:r.prix_optimal, marge:r.marge_optimal, color:'#34d399', border:'rgba(52,211,153,0.35)', bg:'rgba(52,211,153,0.09)', icon:'🎯' },
+    { label:'Max', price:r.prix_max, marge:r.marge_max, color:'#a78bfa', border:'rgba(167,139,250,0.25)', bg:'rgba(167,139,250,0.07)', icon:'📈' },
   ];
-  c.innerHTML = `
+  // Garde le bouton × et ajoute le contenu
+  const closeBtn = c.querySelector('button');
+  c.innerHTML = '';
+  if (closeBtn) c.appendChild(closeBtn);
+
+  const content = document.createElement('div');
+  content.innerHTML = `
     <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px">
       ${tiers.map((t,i)=>`
         <div style="background:${t.bg};border:1px solid ${t.border};border-radius:10px;padding:10px 8px;text-align:center;animation:price-flip 0.4s ${i*100}ms both">
           <div style="font-size:15px;margin-bottom:3px">${t.icon}</div>
-          <div style="font-size:17px;font-weight:800;color:${t.color};letter-spacing:-0.01em">€${t.price?.toFixed(2)??'—'}</div>
+          <div style="font-size:18px;font-weight:800;color:${t.color};letter-spacing:-0.01em">€${t.price?.toFixed(2)??'—'}</div>
           <div style="font-size:9px;color:rgba(255,255,255,0.4);margin-top:2px">${t.label}</div>
           <div style="font-size:10px;font-weight:600;color:${t.color};margin-top:3px">${t.marge??''}</div>
         </div>`).join('')}
     </div>
-    <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);border-radius:10px;padding:10px 12px;margin-bottom:8px;animation:price-counter 0.35s 300ms both">
+    <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);border-radius:10px;padding:10px 12px;margin-bottom:8px;animation:price-counter 0.35s 300ms both">
       <p style="font-size:10px;color:rgba(255,255,255,0.35);text-transform:uppercase;letter-spacing:.06em;margin-bottom:5px">📊 Analyse</p>
       <p style="font-size:11px;color:rgba(255,255,255,0.7);line-height:1.5">${r.explication??''}</p>
     </div>
@@ -160,6 +170,7 @@ function showMarketResultsInline(r) {
       ${r.conseils.slice(0,3).map(tip=>`<div style="display:flex;gap:6px;margin-bottom:5px;font-size:11px;color:rgba(255,255,255,0.6);line-height:1.4"><span style="color:#a78bfa;flex-shrink:0">→</span>${tip}</div>`).join('')}
     </div>` : ''}
     <p style="font-size:9px;color:rgba(255,255,255,0.2);text-align:center;margin-top:8px">⚠ Estimation IA — vérifie sur Vinted avant de fixer ton prix</p>`;
+  c.appendChild(content);
 }
 let GEMINI_KEY = null; // chargée depuis Supabase au démarrage
 let importedItems = [];
