@@ -74,7 +74,19 @@ async function loadGeminiKey() {
   } catch(e) { console.warn('Clé Gemini non trouvée', e); }
 }
 
-function resetImportModal() {
+function closeAIModal() {
+  const modal = document.getElementById('import-invoice-modal');
+  const card  = modal?.querySelector('.ai-modal-card');
+  if (!modal) return;
+  // Animation de fermeture
+  if (card) { card.style.animation = 'ai-modal-out 0.3s cubic-bezier(0.4,0,1,1) both'; }
+  modal.style.animation = 'ai-backdrop-out 0.3s ease both';
+  setTimeout(() => {
+    hideModal(modal);
+    modal.style.animation = '';
+    if (card) card.style.animation = '';
+  }, 280);
+}
   document.getElementById('import-upload-zone').style.display = '';
   document.getElementById('import-loading').classList.add('hidden');
   document.getElementById('import-results').classList.add('hidden');
@@ -92,6 +104,20 @@ async function analyzeInvoice(file) {
   }
   document.getElementById('import-upload-zone').style.display = 'none';
   document.getElementById('import-loading').classList.remove('hidden');
+
+  // Réinitialise la barre de progression
+  const fill = document.getElementById('ai-progress-fill');
+  if (fill) { fill.style.animation = 'none'; void fill.offsetWidth; fill.style.animation = 'ai-progress 8s cubic-bezier(0.1,0.4,0.2,1) forwards'; }
+
+  // Messages cycliques pendant l'analyse
+  const stages = ['Lecture de la facture…','Identification des articles…','Extraction des quantités…','Calcul des prix réels…','Application des réductions…','Finalisation…'];
+  let sIdx = 0;
+  const stEl = document.getElementById('ai-stage-text');
+  const stInterval = setInterval(() => {
+    sIdx = (sIdx + 1) % stages.length;
+    if (stEl) { stEl.style.opacity='0'; stEl.style.transform='translateY(4px)'; setTimeout(()=>{ stEl.textContent=stages[sIdx]; stEl.style.opacity='1'; stEl.style.transform='none'; }, 200); }
+  }, 1400);
+  window._aiStageInterval = stInterval;
 
   try {
     const base64 = await new Promise((res, rej) => {
@@ -126,10 +152,12 @@ async function analyzeInvoice(file) {
     const clean = text.replace(/```json|```/g, '').trim();
     const parsed = JSON.parse(clean);
     if (!parsed.articles || !Array.isArray(parsed.articles)) throw new Error('Format de réponse invalide');
+    if (window._aiStageInterval) clearInterval(window._aiStageInterval);
     importedItems = parsed.articles;
     showImportResults();
 
   } catch(e) {
+    if (window._aiStageInterval) clearInterval(window._aiStageInterval);
     console.error('Import error:', e);
     document.getElementById('import-loading').classList.add('hidden');
     document.getElementById('import-error').classList.remove('hidden');
@@ -193,7 +221,7 @@ function confirmImport() {
   populateOrderSelect();
   updateSidebarBadge();
   updateDashboardMetrics();
-  hideModal(document.getElementById('import-invoice-modal'));
+  closeAIModal();
   showToast(`${added} article${added > 1 ? 's' : ''} ajouté${added > 1 ? 's' : ''} au stock ✅`, 'success');
 }
 async function initLockScreen(onUnlock) {
@@ -1014,7 +1042,6 @@ function startApp(){
   // Import facture IA
   const btnImportInvoice = document.getElementById('btn-import-invoice');
   if (btnImportInvoice) btnImportInvoice.addEventListener('click', (e) => {
-    // Ripple effect
     const ripple = document.createElement('span');
     ripple.className = 'ripple';
     const rect = btnImportInvoice.getBoundingClientRect();
@@ -1022,13 +1049,15 @@ function startApp(){
     ripple.style.top = (e.clientY - rect.top) + 'px';
     btnImportInvoice.appendChild(ripple);
     setTimeout(() => ripple.remove(), 600);
-    // Open modal
     resetImportModal();
     showModal(document.getElementById('import-invoice-modal'));
+    // Relance l'animation d'entrée de la card
+    const card = document.querySelector('.ai-modal-card');
+    if (card) { card.style.animation='none'; void card.offsetWidth; card.style.animation=''; }
     if (window.lucide) lucide.createIcons();
   });
-  document.getElementById('btn-import-invoice-close')?.addEventListener('click', () => hideModal(document.getElementById('import-invoice-modal')));
-  document.getElementById('btn-import-cancel')?.addEventListener('click', () => hideModal(document.getElementById('import-invoice-modal')));
+  document.getElementById('btn-import-invoice-close')?.addEventListener('click', closeAIModal);
+  document.getElementById('btn-import-cancel')?.addEventListener('click', closeAIModal);
   document.getElementById('btn-import-confirm')?.addEventListener('click', confirmImport);
   document.getElementById('import-file-input')?.addEventListener('change', e => {
     const f = e.target.files[0];
