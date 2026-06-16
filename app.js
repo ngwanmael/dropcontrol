@@ -87,6 +87,8 @@ function closeAIModal() {
     if (card) card.style.animation = '';
   }, 280);
 }
+
+function resetImportModal() {
   document.getElementById('import-upload-zone').style.display = '';
   document.getElementById('import-loading').classList.add('hidden');
   document.getElementById('import-results').classList.add('hidden');
