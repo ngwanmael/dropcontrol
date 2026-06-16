@@ -688,12 +688,12 @@ function renderProducts(){
     delBtn.addEventListener('click',()=>openDeleteModal('product',p.id));
     delCell.appendChild(delBtn);
 
-    const priceCell=document.createElement('div');
-    priceCell.style.cssText='display:flex;align-items:center;justify-content:center;';
-    priceCell.innerHTML=`<button class="cat-price-btn" title="Estimateur de prix IA" style="display:inline-flex;align-items:center;gap:4px;padding:5px 10px;border-radius:8px;cursor:pointer;font-size:11px;font-weight:700;background:linear-gradient(135deg,rgba(251,191,36,0.1),rgba(52,211,153,0.08));color:#fbbf24;border:1px solid rgba(251,191,36,0.2);transition:all 0.18s;white-space:nowrap">💰 Prix</button>`;
-    priceCell.querySelector('.cat-price-btn').addEventListener('click',()=>openPriceEstimator(p));
+    const priceBtnCell=document.createElement('div');
+    priceBtnCell.style.cssText='display:flex;align-items:center;justify-content:center;';
+    priceBtnCell.innerHTML=`<button class="cat-price-btn" title="Estimateur de prix IA" style="display:inline-flex;align-items:center;gap:4px;padding:5px 10px;border-radius:8px;cursor:pointer;font-size:11px;font-weight:700;background:linear-gradient(135deg,rgba(251,191,36,0.1),rgba(52,211,153,0.08));color:#fbbf24;border:1px solid rgba(251,191,36,0.2);transition:all 0.18s;white-space:nowrap">💰 Prix</button>`;
+    priceBtnCell.querySelector('.cat-price-btn').addEventListener('click',()=>openPriceEstimator(p));
 
-    row.append(nameCell,costCell,priceCell,marginCell,profitCell,lotCell,delCell);
+    row.append(nameCell,costCell,priceBtnCell,marginCell,profitCell,lotCell,delCell);
 
     // Info mobile catalogue
     const mobInfo=document.createElement('div');
