@@ -1018,11 +1018,13 @@ if(bpm)bpm.addEventListener('click',()=>{
 });
 
 document.addEventListener('DOMContentLoaded', async () => {
-  // 1. Chargement des données depuis Supabase
-  await initStorage();
-  // 2. Cache le loader
-  hideLoader();
-  // 3. Affiche le verrou puis démarre l'app
+  try {
+    await initStorage();
+  } catch(e) {
+    console.error('Init error:', e);
+  } finally {
+    hideLoader();
+  }
   initLockScreen(startApp);
 });
 function startApp(){
