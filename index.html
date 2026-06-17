@@ -557,26 +557,30 @@
     /* Empty state */
     @keyframes phrase-in  { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }
     @keyframes phrase-out { from{opacity:1;transform:translateY(0)} to{opacity:0;transform:translateY(-10px)} }
+    @keyframes phrase-shine {
+      0%   { background-position:150% center; opacity:0; transform:translateY(12px) scale(0.97); }
+      20%  { opacity:1; transform:translateY(0) scale(1); }
+      60%  { background-position:0% center; }
+      100% { background-position:-150% center; }
+    }
 
-    .dai-empty {
-      display:flex; flex-direction:column; align-items:center; justify-content:center;
-      height:100%; text-align:center; padding:24px;
-    }
-    .dai-phrase-wrap {
-      margin-bottom:12px;
-    }
+    .dai-empty { display:flex; flex-direction:column; align-items:center; justify-content:center; height:100%; text-align:center; padding:24px; }
+    .dai-phrase-wrap { margin-bottom:12px; }
     #dai-phrase {
-      font-size:26px; font-weight:700; letter-spacing:-0.02em;
-      background:linear-gradient(135deg,white 60%,rgba(255,255,255,0.5));
-      -webkit-background-clip:text; -webkit-text-fill-color:transparent;
-      background-clip:text;
-      animation:phrase-in 0.45s cubic-bezier(0.2,0.9,0.3,1) both;
-      display:block;
+      font-size:28px; font-weight:700; letter-spacing:-0.02em;
+      display:block; line-height:1.25;
+      background: linear-gradient(90deg,
+        rgba(255,255,255,0.4) 0%,
+        white 20%,
+        #c4b5fd 40%,
+        white 55%,
+        rgba(255,255,255,0.4) 100%
+      );
+      background-size:250% auto;
+      -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text;
+      animation: phrase-shine 1.4s cubic-bezier(0.2,0.9,0.3,1) both;
     }
-    .dai-powered {
-      font-size:11px; color:rgba(255,255,255,0.25); margin-top:6px;
-      letter-spacing:0.04em;
-    }
+    .dai-powered { font-size:11px; color:rgba(255,255,255,0.22); margin-top:8px; letter-spacing:0.05em; }
 
     /* User message */
     .dai-msg-user {
@@ -1673,16 +1677,8 @@
       <!-- Header -->
       <div class="dai-header">
         <div class="dai-header-left">
-          <div class="dai-logo" style="display:flex;align-items:center;justify-content:center;line-height:0">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" style="display:block">
-              <defs><linearGradient id="hdrSpk" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#a78bfa"/><stop offset="100%" stop-color="#34d399"/></linearGradient></defs>
-              <path fill="url(#hdrSpk)" d="M12 3L13.27 8.27L18.5 7L15.23 11L18.5 15L13.27 13.73L12 19L10.73 13.73L5.5 15L8.77 11L5.5 7L10.73 8.27L12 3Z"/>
-              <path fill="url(#hdrSpk)" opacity="0.6" d="M19 2L19.75 4.25L22 5L19.75 5.75L19 8L18.25 5.75L16 5L18.25 4.25L19 2Z"/>
-              <path fill="url(#hdrSpk)" opacity="0.5" d="M5 16L5.5 17.5L7 18L5.5 18.5L5 20L4.5 18.5L3 18L4.5 17.5L5 16Z"/>
-            </svg>
-          </div>
           <div>
-            <div class="dai-title">Drop AI</div>
+            <div class="dai-title" style="font-size:20px">Drop AI</div>
             <div class="dai-subtitle">Analyse ton business en temps réel</div>
           </div>
         </div>

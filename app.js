@@ -103,10 +103,16 @@ function openDropAI() {
   if (!overlay) return;
   overlay.classList.add('open');
   document.body.classList.add('modal-open');
-  _daiPhraseIdx = 0;
+  // Phrase aléatoire à chaque ouverture avec effet shine
   const el = document.getElementById('dai-phrase');
-  if (el) { el.textContent = DAI_PHRASES[0]; el.style.animation = 'phrase-in 0.45s ease both'; }
-  startPhraseRotation();
+  if (el) {
+    const idx = Math.floor(Math.random() * DAI_PHRASES.length);
+    _daiPhraseIdx = idx;
+    el.textContent = DAI_PHRASES[idx];
+    el.style.animation = 'none';
+    void el.offsetWidth;
+    el.style.animation = 'phrase-shine 1.4s cubic-bezier(0.2,0.9,0.3,1) both';
+  }
   setTimeout(() => document.getElementById('dai-input')?.focus(), 400);
   if (window.lucide) lucide.createIcons();
 }
@@ -230,15 +236,15 @@ function clearDropAIChat() {
   stopPhraseRotation();
   const msgs = document.getElementById('dai-messages');
   if (!msgs) return;
-  _daiPhraseIdx = 0;
+  const idx = Math.floor(Math.random() * DAI_PHRASES.length);
+  _daiPhraseIdx = idx;
   msgs.innerHTML = `<div class="dai-empty" id="dai-empty">
     <div class="dai-phrase-wrap">
-      <span id="dai-phrase" style="animation:phrase-in 0.45s ease both">${DAI_PHRASES[0]}</span>
+      <span id="dai-phrase">${DAI_PHRASES[idx]}</span>
       <p class="dai-powered">Drop AI · Powered by Gemini</p>
     </div>
   </div>`;
   document.getElementById('dai-presets')?.classList.remove('hidden');
-  startPhraseRotation();
 }
 
 function addTypingIndicator() {
