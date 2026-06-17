@@ -377,8 +377,15 @@ Réponds UNIQUEMENT en JSON valide sans backticks :
 {"prix_min":4.90,"prix_optimal":7.90,"prix_max":11.90,"marge_min":"72%","marge_optimal":"84%","marge_max":"91%","explication":"2-3 phrases honnêtes","conseils":["Conseil 1","Conseil 2","Conseil 3"]}`;
 
   try {
-    const text = await geminiRequest(prompt, 600);
-    const result = JSON.parse(text.replace(/```json|```/g,'').trim());
+    const text = await geminiRequest(prompt, 1200);
+    // Nettoyage robuste du JSON
+    let clean = text.replace(/```json|```/g,'').trim();
+    // Si JSON tronqué, tente de le fermer
+    if (!clean.endsWith('}')) {
+      const lastBrace = clean.lastIndexOf('}');
+      clean = lastBrace > 0 ? clean.slice(0, lastBrace + 1) + '}' : clean + '"}]}';
+    }
+    const result = JSON.parse(clean);
 
     clearInterval(window._marketStageInterval);
     document.getElementById('market-loading')?.classList.add('hidden');
