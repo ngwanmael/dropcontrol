@@ -59,7 +59,208 @@ function initRealtime() {
     .subscribe();
 }
 
-// ─── ESTIMATEUR DE PRIX IA — Inline ─────────────────────
+// ─── DROP AI ─────────────────────────────────────────────
+function openDropAI() {
+  const overlay = document.getElementById('dropai-overlay');
+  if (!overlay) return;
+  overlay.classList.add('open');
+  document.body.classList.add('modal-open');
+  setTimeout(() => document.getElementById('dai-input')?.focus(), 400);
+  if (window.lucide) lucide.createIcons();
+}
+
+function closeDropAI() {
+  const overlay = document.getElementById('dropai-overlay');
+  const drawer = document.getElementById('dropai-drawer');
+  if (!drawer) return;
+  drawer.style.animation = 'dropai-out 0.3s cubic-bezier(0.4,0,1,1) both';
+  setTimeout(() => {
+    overlay.classList.remove('open');
+    drawer.style.animation = '';
+    document.body.classList.remove('modal-open');
+  }, 280);
+}
+
+function buildDropAIContext() {
+  const stats = computeStats(orders);
+  const now = new Date();
+  const monthKey = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
+  const monthOrders = orders.filter(o => o.date?.startsWith(monthKey));
+  const monthStats = computeStats(monthOrders);
+  const prevMonth = new Date(now.getFullYear(), now.getMonth()-1, 1);
+  const prevKey = `${prevMonth.getFullYear()}-${String(prevMonth.getMonth()+1).padStart(2,'0')}`;
+  const prevOrders = orders.filter(o => o.date?.startsWith(prevKey));
+  const prevStats = computeStats(prevOrders);
+
+  // Trésorerie
+  const tr = (parseFloat(currentConfig.initialCapital)||0)
+    + orders.reduce((a,o)=>a+o.totalReceived,0)
+    - stocks.reduce((a,s)=>a+s.totalCost,0)
+    - orders.reduce((a,o)=>a+(o.feeFixedAtTime??currentConfig.feeFixed)+(o.totalReceived*((o.feePctAtTime??currentConfig.feePercent)/100)),0);
+
+  // Top produits
+  const prodMap = {};
+  orders.forEach(o => {
+    if (!prodMap[o.productName]) prodMap[o.productName] = {ventes:0, ca:0};
+    prodMap[o.productName].ventes += o.qty||1;
+    prodMap[o.productName].ca += o.totalReceived;
+  });
+  const topProd = Object.entries(prodMap).sort((a,b)=>b[1].ca-a[1].ca).slice(0,5);
+
+  return {
+    date_analyse: new Date().toLocaleDateString('fr-FR'),
+    resume_global: {
+      total_commandes: orders.length,
+      ca_total: `€${stats.revenue.toFixed(2)}`,
+      profit_net: `€${stats.netProfit.toFixed(2)}`,
+      taux_marge: `${stats.marginRate.toFixed(1)}%`,
+      panier_moyen: `€${stats.avgBasket.toFixed(2)}`,
+      tresorerie: `€${tr.toFixed(2)}`
+    },
+    mois_en_cours: {
+      mois: monthKey,
+      commandes: monthOrders.length,
+      ca: `€${monthStats.revenue.toFixed(2)}`,
+      profit: `€${monthStats.netProfit.toFixed(2)}`,
+      marge: `${monthStats.marginRate.toFixed(1)}%`,
+      objectif: `€${currentConfig.monthlyGoal}`,
+      progression: `${currentConfig.monthlyGoal>0?((monthStats.netProfit/currentConfig.monthlyGoal)*100).toFixed(1):0}%`
+    },
+    mois_precedent: {
+      commandes: prevOrders.length,
+      ca: `€${prevStats.revenue.toFixed(2)}`,
+      profit: `€${prevStats.netProfit.toFixed(2)}`
+    },
+    stocks: stocks.map(s => ({
+      nom: s.name,
+      en_stock: s.currentQty,
+      initial: s.originalQty ?? s.initialQty,
+      alerte_rupture: s.currentQty <= currentConfig.stockAlert,
+      cout_unitaire: `€${(s.unitCost||0).toFixed(2)}`,
+      investissement: `€${(s.totalCost||0).toFixed(2)}`
+    })),
+    top_articles: topProd.map(([nom,d])=>({nom, ventes:d.ventes, ca:`€${d.ca.toFixed(2)}`})),
+    dernieres_commandes: [...orders].reverse().slice(0,8).map(o=>({
+      client: o.customer, article: o.productName,
+      montant: `€${o.totalReceived.toFixed(2)}`,
+      statut: o.status, date: o.date?.slice(0,10)
+    })),
+    catalogue_produits: products.map(p=>({
+      nom: p.name,
+      cout: `€${(p.cost||0).toFixed(2)}`,
+      prix_vente: `€${(p.selling||0).toFixed(2)}`,
+      marge: `${((p.selling-(p.cost+p.shipping+p.gatewayFees))/p.selling*100).toFixed(1)}%`
+    })),
+    config: {
+      plateforme: 'Vinted',
+      frais_emballage: `€${currentConfig.feeFixed}`,
+      frais_variables: `${currentConfig.feePercent}%`,
+      objectif_mensuel: `€${currentConfig.monthlyGoal}`,
+      seuil_alerte_stock: currentConfig.stockAlert
+    }
+  };
+}
+
+function formatDropAIResponse(text) {
+  text = text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+  text = text.replace(/^#{1,3}\s+(.+)$/gm, '<div class="dai-section-title">$1</div>');
+  text = text.replace(/^[-•]\s+(.+)$/gm, '<div class="dai-bullet">$1</div>');
+  text = text.replace(/(€[\d,\.]+)/g, '<span class="dai-number">$1</span>');
+  text = text.replace(/(\d+[\.,]\d+%)/g, '<span class="dai-number">$1</span>');
+  const paras = text.split(/\n\n+/);
+  return paras.map(p => `<p style="margin:0 0 8px">${p.replace(/\n/g,'<br>')}</p>`).join('');
+}
+
+function addUserMessage(text) {
+  document.getElementById('dai-empty')?.remove();
+  const msgs = document.getElementById('dai-messages');
+  if (!msgs) return;
+  const div = document.createElement('div');
+  div.className = 'dai-msg-user';
+  div.innerHTML = `<div class="dai-msg-user-bubble">${text}</div>`;
+  msgs.appendChild(div);
+  msgs.scrollTop = msgs.scrollHeight;
+}
+
+function addTypingIndicator() {
+  const msgs = document.getElementById('dai-messages');
+  if (!msgs) return;
+  const div = document.createElement('div');
+  div.className = 'dai-typing'; div.id = 'dai-typing';
+  div.innerHTML = `<div class="dai-typing-avatar">🤖</div><div class="dai-typing-dots"><div class="dai-dot"></div><div class="dai-dot"></div><div class="dai-dot"></div></div>`;
+  msgs.appendChild(div);
+  msgs.scrollTop = msgs.scrollHeight;
+}
+
+function removeTypingIndicator() {
+  document.getElementById('dai-typing')?.remove();
+}
+
+function addAIMessage(html) {
+  const msgs = document.getElementById('dai-messages');
+  if (!msgs) return;
+  const div = document.createElement('div');
+  div.className = 'dai-msg-ai';
+  div.innerHTML = `<div class="dai-msg-ai-avatar">🤖</div><div class="dai-msg-ai-bubble" style="animation:typewriter-reveal 0.5s ease both">${html}</div>`;
+  msgs.appendChild(div);
+  msgs.scrollTop = msgs.scrollHeight;
+}
+
+async function sendDropAI(question) {
+  if (!GEMINI_KEY) { showToast('Clé Gemini non configurée','error'); return; }
+  if (!question.trim()) return;
+
+  // Hide presets after first use
+  document.getElementById('dai-presets')?.classList.add('hidden');
+
+  // UI
+  addUserMessage(question);
+  addTypingIndicator();
+  document.getElementById('dai-send-btn').disabled = true;
+  document.getElementById('dai-input').value = '';
+
+  const context = buildDropAIContext();
+  const prompt = `Tu es Drop AI, l'assistant IA de DropControl — l'app de gestion dropshipping de l'utilisateur.
+
+DONNÉES BUSINESS EN TEMPS RÉEL :
+${JSON.stringify(context, null, 2)}
+
+INSTRUCTIONS :
+- Réponds en français, de manière directe et actionnable
+- Utilise les vraies données pour étayer tes réponses avec des chiffres précis
+- Sois honnête : si les données sont insuffisantes ou si tu n'es pas sûr, dis-le
+- Structure ta réponse avec des sections claires si nécessaire (max 4-5 points)
+- Commence par l'essentiel, sans intro générique
+- Utilise **gras** pour les chiffres clés et points importants
+- Longueur : concis mais complet (5-10 lignes max)
+
+QUESTION : ${question}`;
+
+  try {
+    const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_KEY}`, {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ contents:[{parts:[{text:prompt}]}], generationConfig:{temperature:0.4,maxOutputTokens:800} })
+    });
+    if (!res.ok) throw new Error(`Erreur ${res.status}`);
+    const data = await res.json();
+    const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
+    if (!text) throw new Error('Réponse vide');
+    removeTypingIndicator();
+    addAIMessage(formatDropAIResponse(text));
+  } catch(e) {
+    removeTypingIndicator();
+    addAIMessage(`<span style="color:#f87171">⚠ ${e.message}</span>`);
+  } finally {
+    document.getElementById('dai-send-btn').disabled = false;
+    document.getElementById('dai-input')?.focus();
+  }
+}
+
+function sendDropAIFromInput() {
+  const input = document.getElementById('dai-input');
+  const q = input?.value.trim();
+  if (q) sendDropAI(q);
+}
 function resetMarketInline() {
   document.getElementById('market-loading')?.classList.add('hidden');
   document.getElementById('market-results-fullwidth')?.classList.add('hidden');

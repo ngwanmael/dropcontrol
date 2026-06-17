@@ -471,8 +471,196 @@
     .price-advice-item:nth-child(1){animation-delay:400ms} .price-advice-item:nth-child(2){animation-delay:520ms} .price-advice-item:nth-child(3){animation-delay:640ms}
 
     /* ══════════════════════════════════════════════
-       BOUTON IA — Style premium animé
+       DROP AI — Chat interface premium
     ══════════════════════════════════════════════ */
+    @keyframes dropai-in { from{transform:translateX(100%);opacity:0} to{transform:translateX(0);opacity:1} }
+    @keyframes dropai-out { from{transform:translateX(0);opacity:1} to{transform:translateX(100%);opacity:0} }
+    @keyframes dropai-backdrop-in { from{opacity:0} to{opacity:1} }
+    @keyframes dot-bounce { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-6px)} }
+    @keyframes msg-in { from{opacity:0;transform:translateY(12px)} to{opacity:1;transform:none} }
+    @keyframes typewriter-reveal { from{opacity:0;filter:blur(3px)} to{opacity:1;filter:blur(0)} }
+    @keyframes chip-hover { from{transform:translateY(0)} to{transform:translateY(-2px)} }
+
+    #dropai-overlay { display:none; position:fixed; inset:0; z-index:450; }
+    #dropai-overlay.open { display:flex !important; }
+
+    #dropai-backdrop {
+      position:absolute; inset:0;
+      background:rgba(0,0,0,0.55);
+      backdrop-filter:blur(6px);
+      animation:dropai-backdrop-in 0.3s ease both;
+      cursor:pointer;
+    }
+
+    #dropai-drawer {
+      position:absolute; right:0; top:0; bottom:0;
+      width:440px; max-width:100vw;
+      display:flex; flex-direction:column;
+      background:linear-gradient(180deg,#10101a,#0c0c14);
+      border-left:1px solid rgba(139,92,246,0.2);
+      box-shadow:-20px 0 60px rgba(139,92,246,0.1),-40px 0 120px rgba(0,0,0,0.5);
+      animation:dropai-in 0.4s cubic-bezier(0.2,0.9,0.3,1) both;
+      overflow:hidden;
+    }
+    #dropai-drawer::before {
+      content:''; position:absolute; inset:0; pointer-events:none; z-index:0;
+      background-image:linear-gradient(rgba(139,92,246,0.025) 1px,transparent 1px),linear-gradient(90deg,rgba(139,92,246,0.025) 1px,transparent 1px);
+      background-size:40px 40px; animation:grid-move 4s linear infinite;
+    }
+    /* Neon border left */
+    #dropai-drawer::after {
+      content:''; position:absolute; left:0; top:0; bottom:0; width:2px;
+      background:linear-gradient(180deg,#7c3aed,#34d399,#60a5fa,#a78bfa,#7c3aed);
+      background-size:100% 300%; animation:market-border-flow 3s ease infinite;
+    }
+
+    /* Header */
+    .dai-header {
+      display:flex; align-items:center; justify-content:space-between;
+      padding:20px 24px 16px; position:relative; z-index:1;
+      border-bottom:1px solid rgba(255,255,255,0.06);
+    }
+    .dai-header-left { display:flex; align-items:center; gap:12px; }
+    .dai-logo {
+      width:42px; height:42px; border-radius:12px;
+      background:linear-gradient(135deg,rgba(139,92,246,0.2),rgba(52,211,153,0.1));
+      border:1px solid rgba(139,92,246,0.35);
+      display:flex; align-items:center; justify-content:center;
+      box-shadow:0 0 20px rgba(139,92,246,0.25);
+      animation:ai-center-pulse 3s ease-in-out infinite;
+    }
+    .dai-title {
+      font-size:17px; font-weight:800; letter-spacing:-0.01em;
+      background:linear-gradient(135deg,#a78bfa,#34d399,#60a5fa);
+      -webkit-background-clip:text; -webkit-text-fill-color:transparent;
+      background-clip:text; background-size:200%; animation:ai-gradient 4s ease infinite;
+    }
+    .dai-subtitle { font-size:10px; color:rgba(255,255,255,0.3); margin-top:1px; }
+    .dai-close-btn {
+      padding:8px; border-radius:10px; cursor:pointer;
+      background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.08);
+      color:rgba(255,255,255,0.4); transition:all 0.2s; display:flex;
+    }
+    .dai-close-btn:hover { background:rgba(255,255,255,0.1); color:white; transform:scale(1.05); }
+
+    /* Messages area */
+    .dai-messages {
+      flex:1; overflow-y:auto; padding:20px 24px;
+      position:relative; z-index:1;
+      scrollbar-width:thin; scrollbar-color:rgba(139,92,246,0.2) transparent;
+    }
+    .dai-messages::-webkit-scrollbar { width:4px; }
+    .dai-messages::-webkit-scrollbar-track { background:transparent; }
+    .dai-messages::-webkit-scrollbar-thumb { background:rgba(139,92,246,0.2); border-radius:4px; }
+
+    /* Empty state */
+    .dai-empty {
+      display:flex; flex-direction:column; align-items:center; justify-content:center;
+      height:100%; text-align:center; padding:24px;
+    }
+    .dai-empty-icon { font-size:40px; margin-bottom:16px; animation:ai-center-pulse 3s ease-in-out infinite; }
+    .dai-empty-title { font-size:15px; font-weight:600; color:white; margin-bottom:8px; }
+    .dai-empty-sub { font-size:12px; color:rgba(255,255,255,0.3); line-height:1.6; }
+
+    /* User message */
+    .dai-msg-user {
+      display:flex; justify-content:flex-end; margin-bottom:16px;
+      animation:msg-in 0.3s cubic-bezier(0.2,0.9,0.3,1) both;
+    }
+    .dai-msg-user-bubble {
+      max-width:80%; padding:10px 14px; border-radius:14px 14px 4px 14px;
+      background:linear-gradient(135deg,rgba(139,92,246,0.25),rgba(96,165,250,0.15));
+      border:1px solid rgba(139,92,246,0.3);
+      font-size:13px; color:white; line-height:1.5;
+    }
+
+    /* AI message */
+    .dai-msg-ai {
+      display:flex; gap:10px; margin-bottom:20px;
+      animation:msg-in 0.4s cubic-bezier(0.2,0.9,0.3,1) 0.1s both;
+    }
+    .dai-msg-ai-avatar {
+      width:32px; height:32px; border-radius:10px; flex-shrink:0;
+      background:linear-gradient(135deg,rgba(139,92,246,0.2),rgba(52,211,153,0.1));
+      border:1px solid rgba(139,92,246,0.3);
+      display:flex; align-items:center; justify-content:center; font-size:14px;
+      align-self:flex-start; margin-top:2px;
+    }
+    .dai-msg-ai-bubble {
+      flex:1; padding:14px 16px; border-radius:4px 14px 14px 14px;
+      background:rgba(255,255,255,0.04);
+      border:1px solid rgba(255,255,255,0.08);
+      font-size:13px; color:rgba(255,255,255,0.85); line-height:1.6;
+    }
+    .dai-msg-ai-bubble strong { color:white; font-weight:600; }
+    .dai-msg-ai-bubble .dai-bullet { display:flex; gap:7px; margin:5px 0; color:rgba(255,255,255,0.75); }
+    .dai-msg-ai-bubble .dai-bullet::before { content:'→'; color:#a78bfa; flex-shrink:0; }
+    .dai-msg-ai-bubble .dai-section-title { font-size:10px; text-transform:uppercase; letter-spacing:.07em; color:#a78bfa; margin:10px 0 5px; font-weight:700; }
+    .dai-msg-ai-bubble .dai-number { color:#34d399; font-weight:700; }
+
+    /* Typing indicator */
+    .dai-typing { display:flex; gap:10px; margin-bottom:16px; animation:msg-in 0.3s ease both; }
+    .dai-typing-avatar { width:32px; height:32px; border-radius:10px; flex-shrink:0; background:linear-gradient(135deg,rgba(139,92,246,0.2),rgba(52,211,153,0.1)); border:1px solid rgba(139,92,246,0.3); display:flex; align-items:center; justify-content:center; font-size:14px; }
+    .dai-typing-dots { display:flex; gap:5px; align-items:center; padding:12px 16px; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.08); border-radius:4px 14px 14px 14px; }
+    .dai-dot { width:7px; height:7px; border-radius:50%; background:#a78bfa; }
+    .dai-dot:nth-child(1) { animation:dot-bounce 1.2s ease-in-out 0s infinite; }
+    .dai-dot:nth-child(2) { animation:dot-bounce 1.2s ease-in-out 0.2s infinite; }
+    .dai-dot:nth-child(3) { animation:dot-bounce 1.2s ease-in-out 0.4s infinite; }
+
+    /* Preset chips */
+    .dai-presets {
+      padding:12px 24px 16px; position:relative; z-index:1;
+      border-top:1px solid rgba(255,255,255,0.05);
+    }
+    .dai-presets-label { font-size:10px; color:rgba(255,255,255,0.25); text-transform:uppercase; letter-spacing:.07em; margin-bottom:10px; }
+    .dai-chips { display:flex; flex-wrap:wrap; gap:7px; }
+    .dai-chip {
+      padding:6px 12px; border-radius:20px; cursor:pointer;
+      background:rgba(139,92,246,0.08); border:1px solid rgba(139,92,246,0.2);
+      color:rgba(255,255,255,0.65); font-size:11px; font-weight:500;
+      transition:all 0.2s cubic-bezier(0.2,0.9,0.3,1);
+      display:flex; align-items:center; gap:5px;
+    }
+    .dai-chip:hover { background:rgba(139,92,246,0.18); border-color:rgba(139,92,246,0.4); color:white; transform:translateY(-2px); box-shadow:0 4px 12px rgba(139,92,246,0.2); }
+    .dai-chip:active { transform:scale(0.95); }
+
+    /* Input zone */
+    .dai-input-zone {
+      padding:14px 24px 20px; position:relative; z-index:1;
+      border-top:1px solid rgba(255,255,255,0.06);
+    }
+    .dai-input-wrap {
+      display:flex; gap:10px; align-items:flex-end;
+      background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.1);
+      border-radius:14px; padding:10px 10px 10px 14px;
+      transition:border-color 0.2s, box-shadow 0.2s;
+    }
+    .dai-input-wrap:focus-within { border-color:rgba(139,92,246,0.4); box-shadow:0 0 0 3px rgba(139,92,246,0.08); }
+    .dai-textarea {
+      flex:1; background:transparent; border:none; outline:none;
+      color:white; font-size:13px; line-height:1.5; resize:none;
+      font-family:inherit; min-height:20px; max-height:80px;
+    }
+    .dai-textarea::placeholder { color:rgba(255,255,255,0.25); }
+    .dai-send {
+      width:36px; height:36px; border-radius:10px; border:none; cursor:pointer;
+      background:linear-gradient(135deg,#7c3aed,#34d399);
+      display:flex; align-items:center; justify-content:center;
+      transition:all 0.2s; flex-shrink:0;
+      box-shadow:0 0 12px rgba(139,92,246,0.3);
+    }
+    .dai-send:hover { transform:scale(1.08); box-shadow:0 0 20px rgba(139,92,246,0.5); }
+    .dai-send:active { transform:scale(0.94); }
+    .dai-send:disabled { opacity:0.5; cursor:not-allowed; transform:none !important; }
+
+    /* Mobile drawer */
+    @media (max-width:768px) {
+      #dropai-drawer { width:100%; }
+      .dai-header { padding:16px 16px 14px; }
+      .dai-messages { padding:14px 16px; }
+      .dai-input-zone { padding:12px 16px 16px; }
+      .dai-presets { padding:10px 16px 12px; }
+    }
     @keyframes ai-gradient { 0%{background-position:0% 50%} 50%{background-position:100% 50%} 100%{background-position:0% 50%} }
     @keyframes ai-pulse { 0%,100%{box-shadow:0 0 0 0 rgba(139,92,246,0.4),0 0 20px rgba(52,211,153,0.15)} 50%{box-shadow:0 0 0 8px rgba(139,92,246,0),0 0 30px rgba(52,211,153,0.25)} }
     @keyframes ai-spin { to{transform:rotate(360deg)} }
@@ -613,9 +801,42 @@
     }
     .bnav-icon { position: relative; }
 
+    /* ── Drop AI button in sidebar ── */
+    .btn-dropai {
+      display:flex; align-items:center; gap:9px;
+      width:100%; padding:10px 14px;
+      border-radius:12px; border:none; cursor:pointer;
+      background:linear-gradient(135deg,rgba(139,92,246,0.15),rgba(52,211,153,0.08));
+      border:1px solid rgba(139,92,246,0.25);
+      color:rgba(255,255,255,0.85); font-size:13px; font-weight:600;
+      letter-spacing:0.01em;
+      position:relative; overflow:hidden;
+      transition:all 0.2s cubic-bezier(0.2,0.9,0.3,1);
+      box-shadow:0 0 12px rgba(139,92,246,0.15);
+    }
+    .btn-dropai::before {
+      content:''; position:absolute; inset:0;
+      background:linear-gradient(135deg,#7c3aed,#34d399,#60a5fa,#7c3aed);
+      background-size:300% 300%; opacity:0;
+      animation:ai-gradient 3s ease infinite;
+      transition:opacity 0.3s;
+    }
+    .btn-dropai:hover { transform:translateY(-2px); box-shadow:0 0 24px rgba(139,92,246,0.35); border-color:rgba(139,92,246,0.5); }
+    .btn-dropai:hover::before { opacity:0.12; }
+    .btn-dropai:active { transform:scale(0.97); }
+    .btn-dropai span { position:relative;z-index:1; }
+    .btn-dropai svg { position:relative;z-index:1; flex-shrink:0; }
+    .dropai-dot {
+      width:7px;height:7px;border-radius:50%;
+      background:#34d399;
+      box-shadow:0 0 8px #34d399;
+      animation:ai-center-pulse 2s ease-in-out infinite;
+      flex-shrink:0; position:relative; z-index:1;
+    }
+
     /* ── Modals au-dessus de la bottom nav ── */
     #settings-modal, #delete-modal, #reappro-modal,
-    #shortcuts-overlay, #app-loader, #lock-screen {
+    #shortcuts-overlay, #app-loader, #lock-screen, #dropai-overlay {
       z-index: 400 !important;
     }
 
@@ -1018,12 +1239,17 @@
       <a id="btn-products"  class="nav-item flex items-center gap-3 px-3 py-2.5 text-sm opacity-60">Products &amp; Margin</a>
       <a id="btn-orders"    class="nav-item flex items-center gap-3 px-3 py-2.5 text-sm opacity-60">Orders</a>
     </nav>
-    <button id="btn-show-shortcuts" class="shortcut-hint-btn mt-4" style="display:flex;align-items:center;gap:8px;padding:9px 12px;border-radius:10px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.07);color:rgba(255,255,255,0.4);font-size:12px;font-weight:500;cursor:pointer;transition:all 0.18s;width:100%">
+    <button id="btn-dropai" onclick="openDropAI()" class="btn-dropai mt-3">
+      <i data-lucide="sparkles" style="width:15px;height:15px"></i>
+      <span>Drop AI</span>
+      <div style="flex:1"></div>
+      <div class="dropai-dot"></div>
+    </button>
+    <button id="btn-show-shortcuts" class="shortcut-hint-btn mt-2" style="display:flex;align-items:center;gap:8px;padding:9px 12px;border-radius:10px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.07);color:rgba(255,255,255,0.4);font-size:12px;font-weight:500;cursor:pointer;transition:all 0.18s;width:100%">
       <i data-lucide="keyboard" style="width:14px;height:14px;flex-shrink:0;color:rgba(255,255,255,0.5)"></i>
       <span style="flex:1;text-align:left">Raccourcis</span>
       <span class="kbd" style="font-size:11px;padding:2px 6px">?</span>
-    </button>
-  </aside>
+    </button>  </aside>
 
   <main class="ml-64 p-10" style="width:calc(100% - 16rem)">
     <header class="glass-header -mx-10 px-10 py-6 mb-10 sticky top-0 z-20">
@@ -1394,6 +1620,61 @@
         <p style="color:#f87171;font-size:14px;font-weight:500;margin-bottom:4px" id="import-error-msg">Impossible d'analyser cette facture</p>
         <p style="color:rgba(255,255,255,0.25);font-size:12px;margin-bottom:16px">Essaie avec une photo plus nette ou un PDF</p>
         <button onclick="resetImportModal()" style="color:#a78bfa;font-size:13px;background:none;border:none;cursor:pointer;text-decoration:underline">↩ Réessayer</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- DROP AI DRAWER -->
+  <div id="dropai-overlay">
+    <div id="dropai-backdrop"></div>
+    <div id="dropai-drawer">
+      <!-- Header -->
+      <div class="dai-header">
+        <div class="dai-header-left">
+          <div class="dai-logo">
+            <i data-lucide="sparkles" style="width:18px;height:18px;color:#a78bfa"></i>
+          </div>
+          <div>
+            <div class="dai-title">Drop AI</div>
+            <div class="dai-subtitle">Analyse ton business en temps réel</div>
+          </div>
+        </div>
+        <button class="dai-close-btn" onclick="closeDropAI()">
+          <i data-lucide="x" style="width:16px;height:16px"></i>
+        </button>
+      </div>
+
+      <!-- Messages -->
+      <div class="dai-messages" id="dai-messages">
+        <div class="dai-empty" id="dai-empty">
+          <div class="dai-empty-icon">🤖</div>
+          <div class="dai-empty-title">Bonjour, je suis Drop AI</div>
+          <div class="dai-empty-sub">Je connais toutes tes données DropControl.<br>Pose-moi n'importe quelle question<br>sur ton business.</div>
+        </div>
+      </div>
+
+      <!-- Preset chips -->
+      <div class="dai-presets" id="dai-presets">
+        <div class="dai-presets-label">Questions rapides</div>
+        <div class="dai-chips">
+          <button class="dai-chip" onclick="sendDropAI('Analyse mon business ce mois — profit, CA, tendances')">📊 Analyse ce mois</button>
+          <button class="dai-chip" onclick="sendDropAI('Quels articles devrais-je réapprovisionner en priorité ?')">🔄 Réappro suggéré</button>
+          <button class="dai-chip" onclick="sendDropAI('Comment améliorer ma marge globale ?')">💡 Améliorer marges</button>
+          <button class="dai-chip" onclick="sendDropAI('À mon rythme actuel, quand vais-je atteindre mon objectif mensuel ?')">🎯 Vers objectif</button>
+          <button class="dai-chip" onclick="sendDropAI('Quel est mon article le plus rentable et pourquoi ?')">🏆 Top article</button>
+          <button class="dai-chip" onclick="sendDropAI('Donne-moi 3 conseils concrets pour booster mes ventes cette semaine')">🚀 Booster ventes</button>
+        </div>
+      </div>
+
+      <!-- Input -->
+      <div class="dai-input-zone">
+        <div class="dai-input-wrap">
+          <textarea id="dai-input" class="dai-textarea" placeholder="Pose une question sur ton business…" rows="1" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendDropAIFromInput()}" oninput="this.style.height='auto';this.style.height=Math.min(this.scrollHeight,80)+'px'"></textarea>
+          <button class="dai-send" id="dai-send-btn" onclick="sendDropAIFromInput()">
+            <i data-lucide="send" style="width:15px;height:15px;color:white"></i>
+          </button>
+        </div>
+        <p style="font-size:10px;color:rgba(255,255,255,0.18);text-align:center;margin-top:8px">Drop AI se base sur tes données DropControl — vérifie avant d'agir</p>
       </div>
     </div>
   </div>
