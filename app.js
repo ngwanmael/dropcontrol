@@ -78,16 +78,41 @@ function initRealtime() {
 }
 
 // ─── DROP AI ─────────────────────────────────────────────
+const DAI_PHRASES = ['Quoi de neuf ?','On fait le point ?','Pose-moi ta question','Je t\'écoute','Qu\'est-ce qu\'on regarde ensemble ?','Dis-moi ce que tu veux savoir','Par où on commence ?'];
+let _daiPhraseIdx = 0, _daiPhraseTimer = null;
+
+function startPhraseRotation() {
+  const el = document.getElementById('dai-phrase');
+  if (!el) return;
+  _daiPhraseTimer = setInterval(() => {
+    el.style.animation = 'phrase-out 0.35s ease forwards';
+    setTimeout(() => {
+      _daiPhraseIdx = (_daiPhraseIdx + 1) % DAI_PHRASES.length;
+      el.textContent = DAI_PHRASES[_daiPhraseIdx];
+      el.style.animation = 'phrase-in 0.45s cubic-bezier(0.2,0.9,0.3,1) forwards';
+    }, 350);
+  }, 3500);
+}
+
+function stopPhraseRotation() {
+  if (_daiPhraseTimer) { clearInterval(_daiPhraseTimer); _daiPhraseTimer = null; }
+}
+
 function openDropAI() {
   const overlay = document.getElementById('dropai-overlay');
   if (!overlay) return;
   overlay.classList.add('open');
   document.body.classList.add('modal-open');
+  _daiPhraseIdx = 0;
+  const el = document.getElementById('dai-phrase');
+  if (el) { el.textContent = DAI_PHRASES[0]; el.style.animation = 'phrase-in 0.45s ease both'; }
+  startPhraseRotation();
   setTimeout(() => document.getElementById('dai-input')?.focus(), 400);
   if (window.lucide) lucide.createIcons();
 }
 
 function closeDropAI() {
+  stopPhraseRotation();
   const overlay = document.getElementById('dropai-overlay');
   const drawer = document.getElementById('dropai-drawer');
   if (!drawer) return;
@@ -190,6 +215,7 @@ function formatDropAIResponse(text) {
 }
 
 function addUserMessage(text) {
+  stopPhraseRotation();
   document.getElementById('dai-empty')?.remove();
   const msgs = document.getElementById('dai-messages');
   if (!msgs) return;
@@ -201,28 +227,19 @@ function addUserMessage(text) {
 }
 
 function clearDropAIChat() {
+  stopPhraseRotation();
   const msgs = document.getElementById('dai-messages');
   if (!msgs) return;
+  _daiPhraseIdx = 0;
   msgs.innerHTML = `<div class="dai-empty" id="dai-empty">
-    <div class="dai-empty-icon">
-      <svg width="56" height="56" viewBox="0 0 24 24" fill="none" style="margin:0 auto 20px;display:block;filter:drop-shadow(0 0 12px rgba(167,139,250,0.8));animation:ai-glow 2s ease-in-out infinite">
-        <defs>
-          <linearGradient id="sparkGrad2" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stop-color="#a78bfa"/>
-            <stop offset="50%" stop-color="#60a5fa"/>
-            <stop offset="100%" stop-color="#34d399"/>
-          </linearGradient>
-        </defs>
-        <path fill="url(#sparkGrad2)" d="M12 3L13.27 8.27L18.5 7L15.23 11L18.5 15L13.27 13.73L12 19L10.73 13.73L5.5 15L8.77 11L5.5 7L10.73 8.27L12 3Z"/>
-        <path fill="url(#sparkGrad2)" opacity="0.6" d="M19 2L19.75 4.25L22 5L19.75 5.75L19 8L18.25 5.75L16 5L18.25 4.25L19 2Z"/>
-        <path fill="url(#sparkGrad2)" opacity="0.5" d="M5 16L5.5 17.5L7 18L5.5 18.5L5 20L4.5 18.5L3 18L4.5 17.5L5 16Z"/>
-      </svg>
+    <div class="dai-phrase-wrap">
+      <span id="dai-phrase" style="animation:phrase-in 0.45s ease both">${DAI_PHRASES[0]}</span>
+      <p class="dai-powered">Drop AI · Powered by Gemini</p>
     </div>
-    <div class="dai-empty-title">Bonjour, je suis Drop AI</div>
-    <div class="dai-empty-sub">Je connais toutes tes données DropControl.<br>Pose-moi n'importe quelle question<br>sur ton business.</div>
   </div>`;
   document.getElementById('dai-presets')?.classList.remove('hidden');
-  if (window.lucide) lucide.createIcons();
+  startPhraseRotation();
+}
 }
 
 function addTypingIndicator() {
