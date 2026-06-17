@@ -240,7 +240,6 @@ function clearDropAIChat() {
   document.getElementById('dai-presets')?.classList.remove('hidden');
   startPhraseRotation();
 }
-}
 
 function addTypingIndicator() {
   const msgs = document.getElementById('dai-messages');
