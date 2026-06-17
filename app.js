@@ -35,6 +35,24 @@ function hideLoader() {
   setTimeout(() => l.style.display = 'none', 320);
 }
 
+// ─── GEMINI REQUEST — retry automatique sur 429 ───────────
+async function geminiRequest(prompt, maxTokens = 800) {
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_KEY}`;
+  const body = JSON.stringify({ contents:[{parts:[{text:prompt}]}], generationConfig:{temperature:0.4, maxOutputTokens:maxTokens} });
+  for (let attempt = 0; attempt < 3; attempt++) {
+    const res = await fetch(url, { method:'POST', headers:{'Content-Type':'application/json'}, body });
+    if (res.status === 429) {
+      if (attempt < 2) { await new Promise(r => setTimeout(r, 3000 * (attempt + 1))); continue; }
+      throw new Error('Quota dépassé — réessaie dans quelques secondes');
+    }
+    if (!res.ok) throw new Error(`Erreur API: ${res.status}`);
+    const data = await res.json();
+    const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
+    if (!text) throw new Error('Réponse vide');
+    return text;
+  }
+}
+
 // ─── SUPABASE REALTIME ────────────────────────────────────
 function initRealtime() {
   db.channel('dc-sync')
@@ -182,12 +200,23 @@ function addUserMessage(text) {
   msgs.scrollTop = msgs.scrollHeight;
 }
 
+function clearDropAIChat() {
+  const msgs = document.getElementById('dai-messages');
+  if (!msgs) return;
+  msgs.innerHTML = `<div class="dai-empty" id="dai-empty">
+    <div class="dai-empty-icon"><div class="dai-star-lg"></div></div>
+    <div class="dai-empty-title">Bonjour, je suis Drop AI</div>
+    <div class="dai-empty-sub">Je connais toutes tes données DropControl.<br>Pose-moi n'importe quelle question<br>sur ton business.</div>
+  </div>`;
+  document.getElementById('dai-presets')?.classList.remove('hidden');
+}
+
 function addTypingIndicator() {
   const msgs = document.getElementById('dai-messages');
   if (!msgs) return;
   const div = document.createElement('div');
   div.className = 'dai-typing'; div.id = 'dai-typing';
-  div.innerHTML = `<div class="dai-typing-avatar">🤖</div><div class="dai-typing-dots"><div class="dai-dot"></div><div class="dai-dot"></div><div class="dai-dot"></div></div>`;
+  div.innerHTML = `<div class="dai-typing-avatar"><div class="dai-star-icon" style="width:14px;height:14px;display:inline-block"></div></div><div class="dai-typing-dots"><div class="dai-dot"></div><div class="dai-dot"></div><div class="dai-dot"></div></div>`;
   msgs.appendChild(div);
   msgs.scrollTop = msgs.scrollHeight;
 }
@@ -201,7 +230,7 @@ function addAIMessage(html) {
   if (!msgs) return;
   const div = document.createElement('div');
   div.className = 'dai-msg-ai';
-  div.innerHTML = `<div class="dai-msg-ai-avatar">🤖</div><div class="dai-msg-ai-bubble" style="animation:typewriter-reveal 0.5s ease both">${html}</div>`;
+  div.innerHTML = `<div class="dai-msg-ai-avatar"><div class="dai-star-icon" style="width:14px;height:14px;display:inline-block"></div></div><div class="dai-msg-ai-bubble" style="animation:typewriter-reveal 0.5s ease both">${html}</div>`;
   msgs.appendChild(div);
   msgs.scrollTop = msgs.scrollHeight;
 }
@@ -237,14 +266,7 @@ INSTRUCTIONS :
 QUESTION : ${question}`;
 
   try {
-    const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_KEY}`, {
-      method:'POST', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({ contents:[{parts:[{text:prompt}]}], generationConfig:{temperature:0.4,maxOutputTokens:800} })
-    });
-    if (!res.ok) throw new Error(`Erreur ${res.status}`);
-    const data = await res.json();
-    const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
-    if (!text) throw new Error('Réponse vide');
+    const text = await geminiRequest(prompt, 800);
     removeTypingIndicator();
     addAIMessage(formatDropAIResponse(text));
   } catch(e) {
@@ -317,19 +339,12 @@ Donne une recommandation de prix de vente sur le marché de revente français (V
 Réponds UNIQUEMENT en JSON valide sans backticks :
 {"prix_min":4.90,"prix_optimal":7.90,"prix_max":11.90,"marge_min":"72%","marge_optimal":"84%","marge_max":"91%","explication":"2-3 phrases honnêtes","conseils":["Conseil 1","Conseil 2","Conseil 3"]}`;
 
-    const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_KEY}`, {
-      method:'POST', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({ contents:[{parts:[{text:prompt}]}], generationConfig:{temperature:0.3} })
-    });
-    if (!res.ok) throw new Error(`Erreur API: ${res.status}`);
-    const data = await res.json();
-    const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
-    if (!text) throw new Error('Réponse vide');
+  try {
+    const text = await geminiRequest(prompt, 600);
     const result = JSON.parse(text.replace(/```json|```/g,'').trim());
 
     clearInterval(window._marketStageInterval);
     document.getElementById('market-loading')?.classList.add('hidden');
-    // Cache le formulaire pour remonter les résultats
     const form = document.getElementById('market-estimator-form');
     if (form) form.style.display = 'none';
     showMarketResultsInline(result);
