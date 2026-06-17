@@ -204,7 +204,20 @@ function clearDropAIChat() {
   const msgs = document.getElementById('dai-messages');
   if (!msgs) return;
   msgs.innerHTML = `<div class="dai-empty" id="dai-empty">
-    <div class="dai-empty-icon"><i data-lucide="sparkles" class="dai-sparkle-lg"></i></div>
+    <div class="dai-empty-icon">
+      <svg width="56" height="56" viewBox="0 0 24 24" fill="none" style="margin:0 auto 20px;display:block;filter:drop-shadow(0 0 12px rgba(167,139,250,0.8));animation:ai-glow 2s ease-in-out infinite">
+        <defs>
+          <linearGradient id="sparkGrad2" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#a78bfa"/>
+            <stop offset="50%" stop-color="#60a5fa"/>
+            <stop offset="100%" stop-color="#34d399"/>
+          </linearGradient>
+        </defs>
+        <path fill="url(#sparkGrad2)" d="M12 3L13.27 8.27L18.5 7L15.23 11L18.5 15L13.27 13.73L12 19L10.73 13.73L5.5 15L8.77 11L5.5 7L10.73 8.27L12 3Z"/>
+        <path fill="url(#sparkGrad2)" opacity="0.6" d="M19 2L19.75 4.25L22 5L19.75 5.75L19 8L18.25 5.75L16 5L18.25 4.25L19 2Z"/>
+        <path fill="url(#sparkGrad2)" opacity="0.5" d="M5 16L5.5 17.5L7 18L5.5 18.5L5 20L4.5 18.5L3 18L4.5 17.5L5 16Z"/>
+      </svg>
+    </div>
     <div class="dai-empty-title">Bonjour, je suis Drop AI</div>
     <div class="dai-empty-sub">Je connais toutes tes données DropControl.<br>Pose-moi n'importe quelle question<br>sur ton business.</div>
   </div>`;
