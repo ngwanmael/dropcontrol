@@ -63,6 +63,7 @@ function initRealtime() {
 function resetMarketInline() {
   document.getElementById('market-loading')?.classList.add('hidden');
   document.getElementById('market-results')?.classList.add('hidden');
+  document.getElementById('market-results-fullwidth')?.classList.add('hidden');
   document.getElementById('market-error')?.classList.add('hidden');
   if (window._marketStageInterval) clearInterval(window._marketStageInterval);
 }
@@ -125,8 +126,9 @@ Réponds UNIQUEMENT en JSON valide sans backticks :
 
     clearInterval(window._marketStageInterval);
     document.getElementById('market-loading')?.classList.add('hidden');
-    document.getElementById('market-results')?.classList.remove('hidden');
     showMarketResultsInline(result);
+    // Scroll vers les résultats
+    setTimeout(()=>document.getElementById('market-results-fullwidth')?.scrollIntoView({behavior:'smooth',block:'nearest'}),100);
 
   } catch(e) {
     clearInterval(window._marketStageInterval);
@@ -138,39 +140,48 @@ Réponds UNIQUEMENT en JSON valide sans backticks :
 }
 
 function showMarketResultsInline(r) {
-  const c = document.getElementById('market-results');
-  if (!c) return;
-  const tiers = [
-    { label:'Min', price:r.prix_min, marge:r.marge_min, color:'#fbbf24', border:'rgba(251,191,36,0.25)', bg:'rgba(251,191,36,0.07)', icon:'📉' },
-    { label:'Optimal ⭐', price:r.prix_optimal, marge:r.marge_optimal, color:'#34d399', border:'rgba(52,211,153,0.35)', bg:'rgba(52,211,153,0.09)', icon:'🎯' },
-    { label:'Max', price:r.prix_max, marge:r.marge_max, color:'#a78bfa', border:'rgba(167,139,250,0.25)', bg:'rgba(167,139,250,0.07)', icon:'📈' },
-  ];
-  // Garde le bouton × et ajoute le contenu
-  const closeBtn = c.querySelector('button');
-  c.innerHTML = '';
-  if (closeBtn) c.appendChild(closeBtn);
+  // Affiche la section pleine largeur
+  const section = document.getElementById('market-results-fullwidth');
+  if (!section) return;
+  section.classList.remove('hidden');
+  section.style.animation = 'none'; void section.offsetWidth; section.style.animation = '';
 
-  const content = document.createElement('div');
-  content.innerHTML = `
-    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px">
-      ${tiers.map((t,i)=>`
-        <div style="background:${t.bg};border:1px solid ${t.border};border-radius:10px;padding:10px 8px;text-align:center;animation:price-flip 0.4s ${i*100}ms both">
-          <div style="font-size:15px;margin-bottom:3px">${t.icon}</div>
-          <div style="font-size:18px;font-weight:800;color:${t.color};letter-spacing:-0.01em">€${t.price?.toFixed(2)??'—'}</div>
-          <div style="font-size:9px;color:rgba(255,255,255,0.4);margin-top:2px">${t.label}</div>
-          <div style="font-size:10px;font-weight:600;color:${t.color};margin-top:3px">${t.marge??''}</div>
-        </div>`).join('')}
+  // Sous-titre avec le nom de l'article analysé
+  const sub = document.getElementById('market-result-subtitle');
+  const name = document.getElementById('inp-product-name')?.value.trim();
+  if (sub && name) sub.textContent = `${name} · Vinted · Leboncoin · eBay FR`;
+
+  // Reconstitue les icônes Lucide
+  if (window.lucide) lucide.createIcons();
+
+  const tiers = [
+    { label:'Prix minimum', price:r.prix_min, marge:r.marge_min, color:'#fbbf24', border:'rgba(251,191,36,0.25)', bg:'rgba(251,191,36,0.07)', icon:'📉', sub:'Point de départ' },
+    { label:'Prix optimal ⭐', price:r.prix_optimal, marge:r.marge_optimal, color:'#34d399', border:'rgba(52,211,153,0.35)', bg:'rgba(52,211,153,0.09)', icon:'🎯', sub:'Recommandé' },
+    { label:'Prix maximum', price:r.prix_max, marge:r.marge_max, color:'#a78bfa', border:'rgba(167,139,250,0.25)', bg:'rgba(167,139,250,0.07)', icon:'📈', sub:'Premium' },
+  ];
+
+  // 3 cartes prix
+  const cards = document.getElementById('market-price-cards');
+  if (cards) cards.innerHTML = tiers.map((t,i)=>`
+    <div style="background:${t.bg};border:1px solid ${t.border};border-radius:14px;padding:20px 16px;text-align:center;animation:price-flip 0.5s ${i*120}ms both;transition:transform 0.2s" onmouseover="this.style.transform='translateY(-3px)'" onmouseout="this.style.transform=''">
+      <div style="font-size:22px;margin-bottom:8px">${t.icon}</div>
+      <div style="font-size:28px;font-weight:800;color:${t.color};letter-spacing:-0.02em">€${t.price?.toFixed(2)??'—'}</div>
+      <div style="font-size:11px;color:rgba(255,255,255,0.5);margin-top:4px">${t.label}</div>
+      <div style="font-size:18px;font-weight:700;color:${t.color};margin-top:8px">${t.marge??''}</div>
+      <div style="font-size:10px;color:rgba(255,255,255,0.3);margin-top:2px">${t.sub}</div>
+    </div>`).join('');
+
+  // Analyse + Conseils côte à côte
+  const grid = document.getElementById('market-analysis-grid');
+  if (grid) grid.innerHTML = `
+    <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);border-radius:12px;padding:16px;animation:price-counter 0.35s 400ms both">
+      <p style="font-size:11px;color:rgba(255,255,255,0.35);text-transform:uppercase;letter-spacing:.07em;margin-bottom:10px">📊 Analyse</p>
+      <p style="font-size:13px;color:rgba(255,255,255,0.75);line-height:1.6">${r.explication??''}</p>
     </div>
-    <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);border-radius:10px;padding:10px 12px;margin-bottom:8px;animation:price-counter 0.35s 300ms both">
-      <p style="font-size:10px;color:rgba(255,255,255,0.35);text-transform:uppercase;letter-spacing:.06em;margin-bottom:5px">📊 Analyse</p>
-      <p style="font-size:11px;color:rgba(255,255,255,0.7);line-height:1.5">${r.explication??''}</p>
-    </div>
-    ${r.conseils?.length ? `<div style="background:rgba(139,92,246,0.05);border:1px solid rgba(139,92,246,0.12);border-radius:10px;padding:10px 12px;animation:price-counter 0.35s 380ms both">
-      <p style="font-size:10px;color:rgba(255,255,255,0.35);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px">💡 Conseils</p>
-      ${r.conseils.slice(0,3).map(tip=>`<div style="display:flex;gap:6px;margin-bottom:5px;font-size:11px;color:rgba(255,255,255,0.6);line-height:1.4"><span style="color:#a78bfa;flex-shrink:0">→</span>${tip}</div>`).join('')}
-    </div>` : ''}
-    <p style="font-size:9px;color:rgba(255,255,255,0.2);text-align:center;margin-top:8px">⚠ Estimation IA — vérifie sur Vinted avant de fixer ton prix</p>`;
-  c.appendChild(content);
+    ${r.conseils?.length ? `<div style="background:rgba(139,92,246,0.05);border:1px solid rgba(139,92,246,0.15);border-radius:12px;padding:16px;animation:price-counter 0.35s 500ms both">
+      <p style="font-size:11px;color:rgba(255,255,255,0.35);text-transform:uppercase;letter-spacing:.07em;margin-bottom:10px">💡 Conseils</p>
+      ${r.conseils.slice(0,3).map(tip=>`<div style="display:flex;gap:8px;margin-bottom:8px;font-size:12px;color:rgba(255,255,255,0.65);line-height:1.5"><span style="color:#a78bfa;flex-shrink:0;margin-top:1px">→</span>${tip}</div>`).join('')}
+    </div>` : ''}`;
 }
 let GEMINI_KEY = null; // chargée depuis Supabase au démarrage
 let importedItems = [];

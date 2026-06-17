@@ -1131,6 +1131,37 @@
         </div>
       </div>
 
+      <!-- RÉSULTATS MARCHÉ IA — Pleine largeur -->
+      <div id="market-results-fullwidth" class="hidden panel-glass rounded-2xl p-6" style="animation:ai-item-in 0.4s cubic-bezier(0.2,0.9,0.3,1) both">
+        <!-- Header -->
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
+          <div style="display:flex;align-items:center;gap:10px">
+            <div style="width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,rgba(139,92,246,0.2),rgba(52,211,153,0.1));border:1px solid rgba(139,92,246,0.3);display:flex;align-items:center;justify-content:center">
+              <i data-lucide="sparkles" style="width:16px;height:16px;color:#a78bfa"></i>
+            </div>
+            <div>
+              <p style="font-size:14px;font-weight:700;background:linear-gradient(135deg,#a78bfa,#34d399);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text">Estimation Marché IA</p>
+              <p id="market-result-subtitle" style="font-size:11px;color:rgba(255,255,255,0.35)">Vinted · Leboncoin · eBay FR</p>
+            </div>
+          </div>
+          <button onclick="resetMarketInline()" style="display:flex;align-items:center;gap:6px;padding:7px 12px;border-radius:9px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);color:rgba(255,255,255,0.5);cursor:pointer;font-size:12px;transition:all 0.2s" onmouseover="this.style.background='rgba(255,255,255,0.1)';this.style.color='white'" onmouseout="this.style.background='rgba(255,255,255,0.05)';this.style.color='rgba(255,255,255,0.5)'">
+            <i data-lucide="x" style="width:13px;height:13px"></i>
+            Fermer
+          </button>
+        </div>
+        <!-- 3 cartes prix pleine largeur -->
+        <div id="market-price-cards" style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:20px"></div>
+        <!-- Analyse + Conseils côte à côte -->
+        <div id="market-analysis-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:16px"></div>
+        <p style="font-size:10px;color:rgba(255,255,255,0.2);text-align:center;margin-top:16px">⚠ Estimation IA — vérifie sur Vinted avant de fixer ton prix définitif</p>
+      </div>
+
+      <!-- Erreur pleine largeur -->
+      <div id="market-error" class="hidden panel-glass rounded-2xl p-6" style="text-align:center">
+        <p id="market-error-msg" style="font-size:13px;color:#f87171;margin-bottom:8px">Erreur lors de l'analyse</p>
+        <button onclick="resetMarketInline()" style="font-size:12px;color:#a78bfa;background:none;border:none;cursor:pointer;text-decoration:underline">Réessayer</button>
+      </div>
+
       <!-- CATALOGUE — CSS Grid (remplace la table) -->
       <div class="panel-glass rounded-2xl p-6">
         <div class="flex items-center justify-between mb-6">
