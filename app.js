@@ -62,9 +62,11 @@ function initRealtime() {
 // ─── ESTIMATEUR DE PRIX IA — Inline ─────────────────────
 function resetMarketInline() {
   document.getElementById('market-loading')?.classList.add('hidden');
-  document.getElementById('market-results')?.classList.add('hidden');
   document.getElementById('market-results-fullwidth')?.classList.add('hidden');
   document.getElementById('market-error')?.classList.add('hidden');
+  // Réaffiche le formulaire
+  const form = document.getElementById('market-estimator-form');
+  if (form) { form.style.display=''; }
   if (window._marketStageInterval) clearInterval(window._marketStageInterval);
 }
 
@@ -126,8 +128,10 @@ Réponds UNIQUEMENT en JSON valide sans backticks :
 
     clearInterval(window._marketStageInterval);
     document.getElementById('market-loading')?.classList.add('hidden');
+    // Cache le formulaire pour remonter les résultats
+    const form = document.getElementById('market-estimator-form');
+    if (form) form.style.display = 'none';
     showMarketResultsInline(result);
-    // Scroll vers les résultats
     setTimeout(()=>document.getElementById('market-results-fullwidth')?.scrollIntoView({behavior:'smooth',block:'nearest'}),100);
 
   } catch(e) {
@@ -160,15 +164,16 @@ function showMarketResultsInline(r) {
     { label:'Prix maximum', price:r.prix_max, marge:r.marge_max, color:'#a78bfa', border:'rgba(167,139,250,0.25)', bg:'rgba(167,139,250,0.07)', icon:'📈', sub:'Premium' },
   ];
 
-  // 3 cartes prix
+  // 3 cartes prix avec animation staggered
   const cards = document.getElementById('market-price-cards');
   if (cards) cards.innerHTML = tiers.map((t,i)=>`
-    <div style="background:${t.bg};border:1px solid ${t.border};border-radius:14px;padding:20px 16px;text-align:center;animation:price-flip 0.5s ${i*120}ms both;transition:transform 0.2s" onmouseover="this.style.transform='translateY(-3px)'" onmouseout="this.style.transform=''">
-      <div style="font-size:22px;margin-bottom:8px">${t.icon}</div>
-      <div style="font-size:28px;font-weight:800;color:${t.color};letter-spacing:-0.02em">€${t.price?.toFixed(2)??'—'}</div>
-      <div style="font-size:11px;color:rgba(255,255,255,0.5);margin-top:4px">${t.label}</div>
-      <div style="font-size:18px;font-weight:700;color:${t.color};margin-top:8px">${t.marge??''}</div>
-      <div style="font-size:10px;color:rgba(255,255,255,0.3);margin-top:2px">${t.sub}</div>
+    <div class="market-price-card" style="background:${t.bg};border:1px solid ${t.border};animation-delay:${i*130}ms;box-shadow:0 4px 24px ${t.bg}">
+      <div style="font-size:24px;margin-bottom:10px">${t.icon}</div>
+      <div style="font-size:30px;font-weight:800;color:${t.color};letter-spacing:-0.02em;text-shadow:0 0 20px ${t.color}44">€${t.price?.toFixed(2)??'—'}</div>
+      <div style="font-size:11px;color:rgba(255,255,255,0.45);margin-top:6px;font-weight:500">${t.label}</div>
+      <div style="width:40px;height:2px;background:${t.border};border-radius:2px;margin:10px auto;"></div>
+      <div style="font-size:20px;font-weight:800;color:${t.color}">${t.marge??''}</div>
+      <div style="font-size:10px;color:rgba(255,255,255,0.3);margin-top:3px;text-transform:uppercase;letter-spacing:0.06em">${t.sub}</div>
     </div>`).join('');
 
   // Analyse + Conseils côte à côte

@@ -328,6 +328,76 @@
     .shortcut-keys { display:flex; align-items:center; gap:4px; }
     .shortcut-sep { font-size:10px; color:rgba(255,255,255,0.2); }
 
+    /* ── Résultats marché IA — animation reveal ── */
+    @keyframes market-reveal {
+      0%   { opacity:0; transform:translateY(32px) scale(0.97); filter:blur(6px); }
+      60%  { filter:blur(0); }
+      100% { opacity:1; transform:translateY(0) scale(1); filter:blur(0); }
+    }
+    @keyframes market-border-flow {
+      0%   { background-position: 0% 50%; }
+      50%  { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+    @keyframes market-card-in {
+      0%   { opacity:0; transform:translateY(20px) rotateX(-12deg); }
+      100% { opacity:1; transform:translateY(0) rotateX(0); }
+    }
+    @keyframes market-sweep {
+      0%   { left:-100%; }
+      100% { left:200%; }
+    }
+    .market-results-card {
+      position:relative;
+      background: linear-gradient(145deg,#13131a,#0d0d14);
+      border-radius:20px;
+      padding:2px;
+      animation: market-reveal 0.55s cubic-bezier(0.2,0.9,0.3,1) both;
+    }
+    .market-results-card::before {
+      content:'';
+      position:absolute;inset:0;
+      border-radius:20px;
+      padding:1.5px;
+      background: linear-gradient(135deg,#7c3aed,#34d399,#60a5fa,#a78bfa,#7c3aed);
+      background-size:300% 300%;
+      animation:market-border-flow 4s ease infinite;
+      -webkit-mask:linear-gradient(#fff 0 0) content-box,linear-gradient(#fff 0 0);
+      -webkit-mask-composite:xor;
+      mask-composite:exclude;
+      pointer-events:none;
+    }
+    .market-results-inner {
+      background:linear-gradient(145deg,#13131a,#0e0e16);
+      border-radius:18px;
+      padding:24px;
+      position:relative;
+      overflow:hidden;
+    }
+    .market-results-inner::before {
+      content:'';
+      position:absolute;inset:0;pointer-events:none;
+      background-image:linear-gradient(rgba(139,92,246,0.03) 1px,transparent 1px),linear-gradient(90deg,rgba(139,92,246,0.03) 1px,transparent 1px);
+      background-size:40px 40px;
+      animation:grid-move 4s linear infinite;
+    }
+    .market-results-inner::after {
+      content:'';
+      position:absolute;
+      top:0;left:-100%;width:60%;height:100%;
+      background:linear-gradient(90deg,transparent,rgba(167,139,250,0.04),transparent);
+      animation:market-sweep 2.5s ease-in-out 0.3s 1 forwards;
+      pointer-events:none;
+    }
+    .market-price-card {
+      border-radius:14px;
+      padding:20px 16px;
+      text-align:center;
+      transition:transform 0.2s, box-shadow 0.2s;
+      animation:market-card-in 0.5s cubic-bezier(0.2,0.9,0.3,1) both;
+    }
+    .market-price-card:hover { transform:translateY(-4px); }
+
     /* Prix estimator — animations distinctes */
     @keyframes price-modal-in { from{opacity:0;filter:blur(12px);transform:scale(1.04)} to{opacity:1;filter:blur(0);transform:scale(1)} }
     @keyframes price-modal-out { from{opacity:1;filter:blur(0);transform:scale(1)} to{opacity:0;filter:blur(12px);transform:scale(1.04)} }
@@ -1040,7 +1110,7 @@
           <button id="btn-save-product" class="btn-primary w-full bg-white text-black font-medium text-sm py-3 rounded-xl hover:bg-gray-200 transition active:scale-95 mt-2">Sauvegarder dans le catalogue</button>
 
           <!-- ── Estimateur de prix IA ── -->
-          <div style="border-top:1px solid rgba(255,255,255,0.07);margin-top:8px;padding-top:16px">
+          <div id="market-estimator-form" style="border-top:1px solid rgba(255,255,255,0.07);margin-top:8px;padding-top:16px;transition:all 0.3s">
             <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px">
               <div style="width:28px;height:28px;border-radius:8px;background:linear-gradient(135deg,rgba(139,92,246,0.2),rgba(52,211,153,0.1));border:1px solid rgba(139,92,246,0.3);display:flex;align-items:center;justify-content:center;flex-shrink:0">
                 <i data-lucide="sparkles" style="width:13px;height:13px;color:#a78bfa"></i>
@@ -1132,28 +1202,30 @@
       </div>
 
       <!-- RÉSULTATS MARCHÉ IA — Pleine largeur -->
-      <div id="market-results-fullwidth" class="hidden panel-glass rounded-2xl p-6" style="animation:ai-item-in 0.4s cubic-bezier(0.2,0.9,0.3,1) both">
-        <!-- Header -->
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
-          <div style="display:flex;align-items:center;gap:10px">
-            <div style="width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,rgba(139,92,246,0.2),rgba(52,211,153,0.1));border:1px solid rgba(139,92,246,0.3);display:flex;align-items:center;justify-content:center">
-              <i data-lucide="sparkles" style="width:16px;height:16px;color:#a78bfa"></i>
+      <div id="market-results-fullwidth" class="hidden market-results-card">
+        <div class="market-results-inner">
+          <!-- Header -->
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;position:relative;z-index:1">
+            <div style="display:flex;align-items:center;gap:12px">
+              <div style="width:40px;height:40px;border-radius:12px;background:linear-gradient(135deg,rgba(139,92,246,0.2),rgba(52,211,153,0.1));border:1px solid rgba(139,92,246,0.35);display:flex;align-items:center;justify-content:center;box-shadow:0 0 16px rgba(139,92,246,0.2)">
+                <i data-lucide="sparkles" style="width:18px;height:18px;color:#a78bfa"></i>
+              </div>
+              <div>
+                <p style="font-size:15px;font-weight:700;background:linear-gradient(135deg,#a78bfa,#34d399,#60a5fa);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;animation:ai-gradient 4s ease infinite;background-size:200%">Estimation Marché IA</p>
+                <p id="market-result-subtitle" style="font-size:11px;color:rgba(255,255,255,0.35);margin-top:1px">Vinted · Leboncoin · eBay FR</p>
+              </div>
             </div>
-            <div>
-              <p style="font-size:14px;font-weight:700;background:linear-gradient(135deg,#a78bfa,#34d399);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text">Estimation Marché IA</p>
-              <p id="market-result-subtitle" style="font-size:11px;color:rgba(255,255,255,0.35)">Vinted · Leboncoin · eBay FR</p>
-            </div>
+            <button onclick="resetMarketInline()" style="display:flex;align-items:center;gap:6px;padding:8px 14px;border-radius:10px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);color:rgba(255,255,255,0.5);cursor:pointer;font-size:12px;font-weight:500;transition:all 0.2s;position:relative;z-index:1" onmouseover="this.style.background='rgba(255,255,255,0.1)';this.style.color='white'" onmouseout="this.style.background='rgba(255,255,255,0.05)';this.style.color='rgba(255,255,255,0.5)'">
+              <i data-lucide="x" style="width:13px;height:13px"></i>
+              Fermer
+            </button>
           </div>
-          <button onclick="resetMarketInline()" style="display:flex;align-items:center;gap:6px;padding:7px 12px;border-radius:9px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);color:rgba(255,255,255,0.5);cursor:pointer;font-size:12px;transition:all 0.2s" onmouseover="this.style.background='rgba(255,255,255,0.1)';this.style.color='white'" onmouseout="this.style.background='rgba(255,255,255,0.05)';this.style.color='rgba(255,255,255,0.5)'">
-            <i data-lucide="x" style="width:13px;height:13px"></i>
-            Fermer
-          </button>
+          <!-- 3 cartes prix -->
+          <div id="market-price-cards" style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:20px;position:relative;z-index:1"></div>
+          <!-- Analyse + Conseils -->
+          <div id="market-analysis-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:16px;position:relative;z-index:1"></div>
+          <p style="font-size:10px;color:rgba(255,255,255,0.2);text-align:center;margin-top:16px;position:relative;z-index:1">⚠ Estimation IA — vérifie sur Vinted avant de fixer ton prix définitif</p>
         </div>
-        <!-- 3 cartes prix pleine largeur -->
-        <div id="market-price-cards" style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:20px"></div>
-        <!-- Analyse + Conseils côte à côte -->
-        <div id="market-analysis-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:16px"></div>
-        <p style="font-size:10px;color:rgba(255,255,255,0.2);text-align:center;margin-top:16px">⚠ Estimation IA — vérifie sur Vinted avant de fixer ton prix définitif</p>
       </div>
 
       <!-- Erreur pleine largeur -->
