@@ -322,8 +322,7 @@ async function analyzeMarketInline() {
     if (stEl) { stEl.style.opacity='0'; setTimeout(()=>{ stEl.textContent=stages[sIdx]; stEl.style.opacity='1'; },200); }
   }, 1400);
 
-  try {
-    const prompt = `Tu es un expert en revente de seconde main en France en 2026. Tu connais les prix pratiqués sur Vinted, Leboncoin, eBay France, Depop et les marchés aux puces.
+  const prompt = `Tu es un expert en revente de seconde main en France en 2026. Tu connais les prix pratiqués sur Vinted, Leboncoin, eBay France, Depop et les marchés aux puces.
 
 Article : ${name}
 Coût d'achat réel : €${cost.toFixed(2)} par unité
