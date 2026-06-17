@@ -204,11 +204,12 @@ function clearDropAIChat() {
   const msgs = document.getElementById('dai-messages');
   if (!msgs) return;
   msgs.innerHTML = `<div class="dai-empty" id="dai-empty">
-    <div class="dai-empty-icon"><div class="dai-star-lg"></div></div>
+    <div class="dai-empty-icon"><i data-lucide="sparkles" class="dai-sparkle-lg"></i></div>
     <div class="dai-empty-title">Bonjour, je suis Drop AI</div>
     <div class="dai-empty-sub">Je connais toutes tes données DropControl.<br>Pose-moi n'importe quelle question<br>sur ton business.</div>
   </div>`;
   document.getElementById('dai-presets')?.classList.remove('hidden');
+  if (window.lucide) lucide.createIcons();
 }
 
 function addTypingIndicator() {
@@ -216,9 +217,10 @@ function addTypingIndicator() {
   if (!msgs) return;
   const div = document.createElement('div');
   div.className = 'dai-typing'; div.id = 'dai-typing';
-  div.innerHTML = `<div class="dai-typing-avatar"><div class="dai-star-icon" style="width:14px;height:14px;display:inline-block"></div></div><div class="dai-typing-dots"><div class="dai-dot"></div><div class="dai-dot"></div><div class="dai-dot"></div></div>`;
+  div.innerHTML = `<div class="dai-typing-avatar"><i data-lucide="sparkles" class="dai-sparkle-sm"></i></div><div class="dai-typing-dots"><div class="dai-dot"></div><div class="dai-dot"></div><div class="dai-dot"></div></div>`;
   msgs.appendChild(div);
   msgs.scrollTop = msgs.scrollHeight;
+  if (window.lucide) lucide.createIcons();
 }
 
 function removeTypingIndicator() {
@@ -230,9 +232,10 @@ function addAIMessage(html) {
   if (!msgs) return;
   const div = document.createElement('div');
   div.className = 'dai-msg-ai';
-  div.innerHTML = `<div class="dai-msg-ai-avatar"><div class="dai-star-icon" style="width:14px;height:14px;display:inline-block"></div></div><div class="dai-msg-ai-bubble" style="animation:typewriter-reveal 0.5s ease both">${html}</div>`;
+  div.innerHTML = `<div class="dai-msg-ai-avatar"><i data-lucide="sparkles" class="dai-sparkle-sm"></i></div><div class="dai-msg-ai-bubble" style="animation:typewriter-reveal 0.5s ease both">${html}</div>`;
   msgs.appendChild(div);
   msgs.scrollTop = msgs.scrollHeight;
+  if (window.lucide) lucide.createIcons();
 }
 
 async function sendDropAI(question) {

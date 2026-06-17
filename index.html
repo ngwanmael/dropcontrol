@@ -844,18 +844,20 @@
       background:linear-gradient(180deg,transparent 0%,#7c3aed 20%,#34d399 50%,#60a5fa 80%,transparent 100%);
       opacity:0.5;
     }
-    /* Icône étoile dans les avatars */
-    .dai-star-icon {
-      width:16px;height:16px;
-      background:linear-gradient(135deg,#a78bfa,#34d399);
-      -webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='currentColor'%3E%3Cpath d='M12 2l2.4 7.4H22l-6.2 4.5 2.4 7.4L12 17l-6.2 4.3 2.4-7.4L2 9.4h7.6z'/%3E%3C/svg%3E") center/contain no-repeat;
-      mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='currentColor'%3E%3Cpath d='M12 2l2.4 7.4H22l-6.2 4.5 2.4 7.4L12 17l-6.2 4.3 2.4-7.4L2 9.4h7.6z'/%3E%3C/svg%3E") center/contain no-repeat;
+    /* Icône sparkles dans Drop AI */
+    .dai-sparkle-sm {
+      width:15px; height:15px; color:#a78bfa;
+      filter:drop-shadow(0 0 4px rgba(167,139,250,0.7));
+      flex-shrink:0;
     }
-    .dai-star-lg {
-      width:32px;height:32px;
-      background:linear-gradient(135deg,#a78bfa,#60a5fa,#34d399);
-      -webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='currentColor'%3E%3Cpath d='M12 2l2.4 7.4H22l-6.2 4.5 2.4 7.4L12 17l-6.2 4.3 2.4-7.4L2 9.4h7.6z'/%3E%3C/svg%3E") center/contain no-repeat;
-      mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='currentColor'%3E%3Cpath d='M12 2l2.4 7.4H22l-6.2 4.5 2.4 7.4L12 17l-6.2 4.3 2.4-7.4L2 9.4h7.6z'/%3E%3C/svg%3E") center/contain no-repeat;
+    .dai-sparkle-md {
+      width:18px; height:18px; color:#a78bfa;
+      filter:drop-shadow(0 0 6px rgba(167,139,250,0.8));
+    }
+    .dai-sparkle-lg {
+      width:38px; height:38px;
+      color:#a78bfa;
+      filter:drop-shadow(0 0 12px rgba(167,139,250,0.7));
       animation:ai-glow 2s ease-in-out infinite;
     }
 
@@ -1657,7 +1659,7 @@
       <div class="dai-header">
         <div class="dai-header-left">
           <div class="dai-logo">
-            <div class="dai-star-icon" style="width:18px;height:18px"></div>
+            <i data-lucide="sparkles" class="dai-sparkle-md"></i>
           </div>
           <div>
             <div class="dai-title">Drop AI</div>
@@ -1677,7 +1679,7 @@
       <!-- Messages -->
       <div class="dai-messages" id="dai-messages">
         <div class="dai-empty" id="dai-empty">
-          <div class="dai-empty-icon"><div class="dai-star-lg"></div></div>
+          <div class="dai-empty-icon"><i data-lucide="sparkles" class="dai-sparkle-lg"></i></div>
           <div class="dai-empty-title">Bonjour, je suis Drop AI</div>
           <div class="dai-empty-sub">Je connais toutes tes données DropControl.<br>Pose-moi n'importe quelle question<br>sur ton business.</div>
         </div>
