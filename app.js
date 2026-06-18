@@ -722,15 +722,48 @@ function fmtEur(val) {
   if (v >= 10_000)        return `${sign}€${(val/1_000).toFixed(1)}K`;
   return `${sign}€${val.toFixed(2)}`;
 }
+function fmtEur(val) {
+  const v = Math.abs(val);
+  const sign = val < 0 ? '-' : '';
+  if (v >= 1_000_000_000) return `${sign}€${(val/1_000_000_000).toFixed(1)}B`;
+  if (v >= 1_000_000)     return `${sign}€${(val/1_000_000).toFixed(1)}M`;
+  if (v >= 10_000)        return `${sign}€${(val/1_000).toFixed(1)}K`;
+  return `${sign}€${val.toFixed(2)}`;
+}
+
+// Anime un chiffre de l'ancienne valeur vers la nouvelle
+function animateKPI(el, toVal, formatter) {
+  if (!el) return;
+  const from = parseFloat(el.dataset.rawVal || '0') || 0;
+  el.dataset.rawVal = toVal;
+  if (from === toVal) { el.textContent = formatter(toVal); return; }
+  const duration = 500, start = performance.now();
+  el.classList.remove('kpi-updated'); void el.offsetWidth; el.classList.add('kpi-updated');
+  function tick(now) {
+    const p = Math.min((now - start) / duration, 1);
+    const eased = 1 - Math.pow(1 - p, 3);
+    el.textContent = formatter(from + (toVal - from) * eased);
+    if (p < 1) requestAnimationFrame(tick);
+  }
+  requestAnimationFrame(tick);
+}
+
 function flashCard(id){const el=document.getElementById(id);if(!el)return;const c=el.closest('.metric-card');if(!c)return;c.classList.remove('flash');void c.offsetWidth;c.classList.add('flash');}
 
-function showToast(msg,type='success'){
-  const c=document.getElementById('toast-container');if(!c)return;
-  const icons={success:'✅',error:'⛔',warn:'⚠️'};
-  const t=document.createElement('div');t.className=`toast toast-${type}`;
-  t.innerHTML=`<span class="toast-icon">${icons[type]||'•'}</span><span>${msg}</span>`;
-  c.appendChild(t);requestAnimationFrame(()=>t.classList.add('show'));
-  setTimeout(()=>{t.classList.remove('show');setTimeout(()=>t.remove(),400);},3200);
+function showToast(msg, type='success') {
+  const c = document.getElementById('toast-container');
+  if (!c) return;
+  const icons = {
+    success: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#34d399" stroke-width="2.5" stroke-linecap="round"><path d="M20 6L9 17l-5-5"/></svg>`,
+    error:   `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#f87171" stroke-width="2.5" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg>`,
+    warn:    `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fbbf24" stroke-width="2.5" stroke-linecap="round"><path d="M12 9v4M12 17h.01"/><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/></svg>`
+  };
+  const t = document.createElement('div');
+  t.className = `toast toast-${type}`;
+  t.innerHTML = `<div class="toast-icon-box">${icons[type]||icons.success}</div><span>${msg}</span>`;
+  c.appendChild(t);
+  requestAnimationFrame(() => t.classList.add('show'));
+  setTimeout(() => { t.classList.remove('show'); setTimeout(() => t.remove(), 400); }, 3200);
 }
 function updateSidebarBadge(){
   const b=document.getElementById('sidebar-stock-badge');
@@ -1077,12 +1110,17 @@ function renderStock(){
   stocks.forEach((s,idx)=>{
     const uc=s.unitCost!=null?s.unitCost:(s.initialQty>0?s.totalCost/s.initialQty:0),isLow=s.currentQty<=currentConfig.stockAlert,av=initials(s.name);
     const displayQty=s.originalQty??s.initialQty;
+    const pct=displayQty>0?Math.min(100,(s.currentQty/displayQty)*100):0;
+    const barColor=pct>60?'var(--accent)':pct>25?'var(--warn)':'var(--danger)';
     const row=document.createElement('div');row.className='inv-grid-row'+(isLow?' row-low':'');row.style.animationDelay=`${idx*40}ms`;
     row.innerHTML=`
       <div class="inv-name-cell"><div class="inv-avatar">${av}</div><span class="inv-name-txt" title="${s.name}">${s.name}</span></div>
       <div class="inv-cell">€${s.totalCost.toFixed(2)}</div>
       <div class="inv-cell-c">${displayQty}</div>
-      <div class="inv-stock ${isLow?'low':'ok'}">${s.currentQty}</div>
+      <div class="inv-stock ${isLow?'low':'ok'}">
+        ${s.currentQty}
+        <div class="stock-level-bar"><div class="stock-level-fill" style="width:${pct}%;background:${barColor}"></div></div>
+      </div>
       <div class="inv-cell-r">€${uc.toFixed(2)}</div>
       <div style="display:flex;justify-content:flex-end"><button class="inv-del" onclick="openDeleteModal('stock','${s.id}')" title="Supprimer"><i data-lucide="trash-2" style="width:14px;height:14px"></i></button></div>
       <div class="inv-mobile-info">
