@@ -28,16 +28,18 @@
     .glass-sidebar { background:rgba(18,18,22,0.85); backdrop-filter:blur(32px) saturate(1.6); border-right:1px solid var(--border); box-shadow:inset 0 1px 0 rgba(255,255,255,0.04); }
     .glass-header  { background:rgba(13,13,16,0.6); backdrop-filter:blur(20px); border-bottom:1px solid var(--border); }
     .metric-card   { background:var(--panel); border:1px solid var(--border); box-shadow:0 6px 24px rgba(0,0,0,0.45),inset 0 1px 0 rgba(255,255,255,0.04); transition:all 0.3s cubic-bezier(0.4,0,0.2,1); position:relative; overflow:hidden; }
-    .metric-card:hover { background:var(--panel-hover); transform:translateY(-2px); }
+    .metric-card:hover { background:var(--panel-hover); border-color:var(--border-strong); transform:translateY(-2px); box-shadow:0 14px 40px rgba(0,0,0,0.55),inset 0 1px 0 rgba(255,255,255,0.06); }
+    .metric-card::before { content:''; position:absolute; top:-40%; right:-20%; width:160px; height:160px; border-radius:50%; opacity:0; transition:opacity 0.4s; pointer-events:none; }
+    .metric-card:hover::before { opacity:1; }
     @keyframes kpi-flash { 0%{box-shadow:0 0 0 0 rgba(52,211,153,0.4)} 60%{box-shadow:0 0 0 8px rgba(52,211,153,0)} 100%{box-shadow:none} }
     .metric-card.flash { animation:kpi-flash 0.55s ease-out; }
 
-    /* Hover coloré par carte */
-    #kpi-profit:hover  { box-shadow:0 14px 40px rgba(0,0,0,0.55),0 0 0 1px rgba(52,211,153,0.45),0 0 28px rgba(52,211,153,0.1); border-color:rgba(52,211,153,0.3) !important; }
-    #kpi-revenue:hover { box-shadow:0 14px 40px rgba(0,0,0,0.55),0 0 0 1px rgba(96,165,250,0.45),0 0 28px rgba(96,165,250,0.1); border-color:rgba(96,165,250,0.3) !important; }
-    #kpi-orders:hover  { box-shadow:0 14px 40px rgba(0,0,0,0.55),0 0 0 1px rgba(167,139,250,0.45),0 0 28px rgba(167,139,250,0.1); border-color:rgba(167,139,250,0.3) !important; }
-    #kpi-basket:hover  { box-shadow:0 14px 40px rgba(0,0,0,0.55),0 0 0 1px rgba(34,211,238,0.45),0 0 28px rgba(34,211,238,0.1); border-color:rgba(34,211,238,0.3) !important; }
-    #kpi-margin:hover  { box-shadow:0 14px 40px rgba(0,0,0,0.55),0 0 0 1px rgba(251,191,36,0.45),0 0 28px rgba(251,191,36,0.1); border-color:rgba(251,191,36,0.3) !important; }
+    /* Glow couleur unique par carte */
+    #kpi-profit::before  { background:radial-gradient(circle,rgba(52,211,153,0.18),transparent 70%); }
+    #kpi-revenue::before { background:radial-gradient(circle,rgba(96,165,250,0.18),transparent 70%); }
+    #kpi-orders::before  { background:radial-gradient(circle,rgba(167,139,250,0.18),transparent 70%); }
+    #kpi-basket::before  { background:radial-gradient(circle,rgba(34,211,238,0.18),transparent 70%); }
+    #kpi-margin::before  { background:radial-gradient(circle,rgba(251,191,36,0.18),transparent 70%); }
 
     .panel-glass { background:var(--panel); border:1px solid var(--border); box-shadow:0 6px 24px rgba(0,0,0,0.4),inset 0 1px 0 rgba(255,255,255,0.03); }
     .hidden { display:none!important; }
