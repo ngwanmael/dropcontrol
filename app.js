@@ -732,18 +732,19 @@ function fmtEur(val) {
 }
 
 // Anime un chiffre de l'ancienne valeur vers la nouvelle
-function animateKPI(el, toVal, formatter) {
+function animateKPI(el, toVal, formatter, decimals=2) {
   if (!el) return;
   const from = parseFloat(el.dataset.rawVal || '0') || 0;
   el.dataset.rawVal = toVal;
-  if (from === toVal) { el.textContent = formatter(toVal); return; }
-  const duration = 500, start = performance.now();
+  if (Math.abs(from - toVal) < 0.01) { el.textContent = formatter(toVal); return; }
+  const duration = 600, start = performance.now();
   el.classList.remove('kpi-updated'); void el.offsetWidth; el.classList.add('kpi-updated');
   function tick(now) {
     const p = Math.min((now - start) / duration, 1);
     const eased = 1 - Math.pow(1 - p, 3);
     el.textContent = formatter(from + (toVal - from) * eased);
     if (p < 1) requestAnimationFrame(tick);
+    else el.textContent = formatter(toVal);
   }
   requestAnimationFrame(tick);
 }
@@ -1275,28 +1276,63 @@ function formatDelta(cur,prev,isCur=true,isPct=false){
   return{text:`${arrow} ${vs} (${sign}${pct.toFixed(0)}% vs mois préc.)`,colorClass:color};
 }
 
-// ─── DASHBOARD ────────────────────────────────────────────
 function updateDashboardMetrics(){
   const filtered=getFilteredOrders(),cur=computeStats(filtered);
   const sc=activeMonthFilter!=='all',prev=sc?computeStats(getOrdersForMonth(getPrevKey(activeMonthFilter))):null;
-  const pe=document.getElementById('dash-profit');pe.innerText=`€${cur.netProfit.toFixed(2)}`;pe.className=`text-2xl font-medium ${cur.netProfit<0?'text-red-400':'text-emerald-400'}`;flashCard('dash-profit');
-  const ps=document.getElementById('dash-profit-compare');if(sc&&prev){const d=formatDelta(cur.netProfit,prev.netProfit,true);ps.innerHTML=`<span class="${d.colorClass} font-medium">${d.text}</span>`;}else{const p=currentConfig.monthlyGoal>0?(cur.netProfit/currentConfig.monthlyGoal)*100:0;ps.innerHTML=`${p.toFixed(1)}% de l'objectif (€${currentConfig.monthlyGoal})`;}
-  const gb=document.getElementById('dash-goal-bar');if(gb){const g=currentConfig.monthlyGoal>0?Math.max(0,(cur.netProfit/currentConfig.monthlyGoal)*100):0;gb.style.width=`${Math.min(g,100).toFixed(1)}%`;gb.classList.toggle('over',g>=100);}
-  document.getElementById('dash-orders').innerText=cur.orderCount;flashCard('dash-orders');
-  const os=document.getElementById('dash-orders-compare');if(os){if(sc&&prev){const d=formatDelta(cur.orderCount,prev.orderCount,false);os.innerHTML=`<span class="${d.colorClass} font-medium">${d.text}</span>`;}else{os.innerText='Commandes au total';}}
-  const re=document.getElementById('dash-revenue');if(re){re.innerText=`€${cur.revenue.toFixed(2)}`;flashCard('dash-revenue');const rs=document.getElementById('dash-revenue-compare');if(rs){if(sc&&prev){const d=formatDelta(cur.revenue,prev.revenue,true);rs.innerHTML=`<span class="${d.colorClass} font-medium">${d.text}</span>`;}else{rs.innerText='Total encaissé';}}}
-  document.getElementById('dash-roi').innerText=`€${cur.avgBasket.toFixed(2)}`;flashCard('dash-roi');
-  const bs=document.getElementById('dash-basket-compare');if(bs){if(sc&&prev){const d=formatDelta(cur.avgBasket,prev.avgBasket,true);bs.innerHTML=`<span class="${d.colorClass} font-medium">${d.text}</span>`;}else{bs.innerText='Moyenne par vente';}}
-  document.getElementById('dash-margin-rate').innerText=`${cur.marginRate.toFixed(1)}%`;flashCard('dash-margin-rate');
-  const ms2=document.getElementById('dash-margin-compare');if(ms2){if(sc&&prev){const d=formatDelta(cur.marginRate,prev.marginRate,false,true);ms2.innerHTML=`<span class="${d.colorClass} font-medium">${d.text}</span>`;}else{ms2.innerText='Santé globale du mois';}}
+
+  // Profit net — animé
+  const pe=document.getElementById('dash-profit');
+  pe.className=`text-2xl font-medium ${cur.netProfit<0?'text-red-400':'text-emerald-400'}`;
+  animateKPI(pe, cur.netProfit, v=>`€${v.toFixed(2)}`);
+  flashCard('dash-profit');
+  const ps=document.getElementById('dash-profit-compare');
+  if(sc&&prev){const d=formatDelta(cur.netProfit,prev.netProfit,true);ps.innerHTML=`<span class="${d.colorClass} font-medium">${d.text}</span>`;}
+  else{const p=currentConfig.monthlyGoal>0?(cur.netProfit/currentConfig.monthlyGoal)*100:0;ps.innerHTML=`${p.toFixed(1)}% de l'objectif (€${currentConfig.monthlyGoal})`;}
+
+  // Barre objectif
+  const gb=document.getElementById('dash-goal-bar');
+  if(gb){const g=currentConfig.monthlyGoal>0?Math.max(0,(cur.netProfit/currentConfig.monthlyGoal)*100):0;gb.style.width=`${Math.min(g,100).toFixed(1)}%`;gb.classList.toggle('over',g>=100);}
+
+  // Commandes
+  const oe=document.getElementById('dash-orders');
+  animateKPI(oe, cur.orderCount, v=>Math.round(v).toString(), 0);
+  flashCard('dash-orders');
+  const os=document.getElementById('dash-orders-compare');
+  if(os){if(sc&&prev){const d=formatDelta(cur.orderCount,prev.orderCount,false);os.innerHTML=`<span class="${d.colorClass} font-medium">${d.text}</span>`;}else{os.innerText='Commandes au total';}}
+
+  // CA
+  const re=document.getElementById('dash-revenue');
+  if(re){animateKPI(re, cur.revenue, v=>`€${v.toFixed(2)}`);flashCard('dash-revenue');const rs=document.getElementById('dash-revenue-compare');if(rs){if(sc&&prev){const d=formatDelta(cur.revenue,prev.revenue,true);rs.innerHTML=`<span class="${d.colorClass} font-medium">${d.text}</span>`;}else{rs.innerText='Total encaissé';}}}
+
+  // Panier moyen
+  const roi=document.getElementById('dash-roi');
+  animateKPI(roi, cur.avgBasket, v=>`€${v.toFixed(2)}`);
+  flashCard('dash-roi');
+  const bs=document.getElementById('dash-basket-compare');
+  if(bs){if(sc&&prev){const d=formatDelta(cur.avgBasket,prev.avgBasket,true);bs.innerHTML=`<span class="${d.colorClass} font-medium">${d.text}</span>`;}else{bs.innerText='Moyenne par vente';}}
+
+  // Marge
+  const mr=document.getElementById('dash-margin-rate');
+  animateKPI(mr, cur.marginRate, v=>`${v.toFixed(1)}%`, 1);
+  flashCard('dash-margin-rate');
+  const ms2=document.getElementById('dash-margin-compare');
+  if(ms2){if(sc&&prev){const d=formatDelta(cur.marginRate,prev.marginRate,false,true);ms2.innerHTML=`<span class="${d.colorClass} font-medium">${d.text}</span>`;}else{ms2.innerText='Santé globale du mois';}}
+
+  // Trésorerie
   const tr=(parseFloat(currentConfig.initialCapital)||0)+orders.reduce((a,o)=>a+o.totalReceived,0)-stocks.reduce((a,s)=>a+s.totalCost,0)-orders.reduce((a,o)=>a+(o.feeFixedAtTime??currentConfig.feeFixed)+(o.totalReceived*((o.feePctAtTime??currentConfig.feePercent)/100)),0);
-  document.getElementById('dash-budget-display').innerText=`€${tr.toFixed(2)}`;
+  const bde=document.getElementById('dash-budget-display');
+  animateKPI(bde, tr, v=>`€${v.toFixed(2)}`);
+
+  // Alertes stock
   const at=document.getElementById('alert-tbody');at.innerHTML='';const low=stocks.filter(s=>s.currentQty<=currentConfig.stockAlert);
   if(low.length===0){at.innerHTML='<tr><td colspan="3" class="p-4 text-center text-gray-500 italic">Aucune rupture ! 🚀</td></tr>';}
   else{low.forEach(s=>{const tr2=document.createElement('tr');tr2.className='border-b border-white/5';const qc=s.currentQty===0?'text-red-500':'text-red-400';tr2.innerHTML=`<td class="p-2.5 font-medium">${s.name}</td><td class="p-2.5 text-center font-bold ${qc}">${s.currentQty} u</td><td class="p-2.5 text-right"><button onclick="openReapproModal('${s.id}')" class="bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 px-2.5 py-0.5 rounded text-[10px] font-medium uppercase transition">+ Réappro</button></td>`;at.appendChild(tr2);});}
+
+  // Todo commandes en attente
   const tc2=document.getElementById('todo-list-container');tc2.innerHTML='';const pend=orders.filter(o=>o.status!=='Livré');
   if(pend.length===0){tc2.innerHTML='<p class="text-sm opacity-40 italic col-span-3">Toutes les commandes livrées ! 🎉</p>';}
   else{pend.forEach(o=>{const c=document.createElement('div');c.className='border border-white/10 bg-white/5 p-4 rounded-xl flex flex-col justify-between space-y-3';c.innerHTML=`<div><div class="flex justify-between items-start"><h5 class="text-white font-medium text-sm">${o.customer}</h5><span class="text-[10px] uppercase font-bold px-2 py-0.5 rounded ${o.status==='En cours'?'bg-amber-500/20 text-amber-300':'bg-blue-500/20 text-blue-300'}">${o.status}</span></div><p class="text-xs text-gray-400 mt-1">${o.productName} <span class="opacity-60">x${o.qty||1}</span></p><p class="text-[11px] text-gray-600 mt-0.5">${formatDate(o.date)}</p></div><button onclick="markAsShipped('${o.id}')" class="w-full text-center text-xs bg-white text-black font-medium py-1.5 rounded-lg hover:bg-gray-200 transition">${o.status==='En cours'?'Passer en expédié':'Marquer comme livré'}</button>`;tc2.appendChild(c);});}
+
   if(window.lucide)lucide.createIcons();
   updateSidebarBadge();renderTopProducts(filtered);renderSVGChart(filtered);
 }
@@ -1308,7 +1344,17 @@ function renderTopProducts(fo){
   if(pe)pe.textContent=activeMonthFilter==='all'?'Toutes périodes':(()=>{const[y,m]=activeMonthFilter.split('-');return new Date(+y,+m-1,1).toLocaleDateString('fr-FR',{month:'long',year:'numeric'});})();
   con.innerHTML='';if(sorted.length===0){con.innerHTML='<p class="text-sm opacity-40 italic">Aucune commande.</p>';return;}
   const mx=sorted[0].revenue,me=['🥇','🥈','🥉','4.','5.'];
-  sorted.forEach((p,i)=>{const pct=mx>0?(p.revenue/mx)*100:0;const d=document.createElement('div');d.className='flex items-center gap-3';d.innerHTML=`<span class="text-sm w-5 text-center flex-shrink-0">${me[i]}</span><span class="text-sm text-white font-medium w-36 truncate flex-shrink-0" title="${p.name}">${p.name}</span><div class="top-bar-track flex-1"><div class="top-bar-fill" style="width:${pct.toFixed(1)}%"></div></div><span class="text-xs text-gray-400 w-16 text-right flex-shrink-0">${p.qty} vendus</span><span class="text-sm font-semibold text-emerald-400 w-20 text-right flex-shrink-0" title="€${p.revenue.toFixed(2)}">${fmtEur(p.revenue)}</span>`;con.appendChild(d);});
+  sorted.forEach((p,i)=>{
+    const pct=mx>0?(p.revenue/mx)*100:0;
+    const barColors=['#fbbf24','rgba(255,255,255,0.6)','#cd7c2f','rgba(255,255,255,0.4)','rgba(255,255,255,0.3)'];
+    const d=document.createElement('div');
+    d.className='flex items-center gap-3';
+    d.style.animation=`ai-item-in 0.3s ${i*60}ms both`;
+    d.innerHTML=`<span class="text-sm w-5 text-center flex-shrink-0">${me[i]}</span><span class="text-sm text-white font-medium w-36 truncate flex-shrink-0" title="${p.name}">${p.name}</span><div class="top-bar-track flex-1"><div class="top-bar-fill" style="width:0%;background:${barColors[i]||'rgba(52,211,153,0.8)'}"></div></div><span class="text-xs text-gray-400 w-16 text-right flex-shrink-0">${p.qty} vendus</span><span class="text-sm font-semibold text-emerald-400 w-20 text-right flex-shrink-0" title="€${p.revenue.toFixed(2)}">${fmtEur(p.revenue)}</span>`;
+    con.appendChild(d);
+    // Anime la barre depuis 0
+    setTimeout(()=>{const fill=d.querySelector('.top-bar-fill');if(fill)fill.style.width=`${pct.toFixed(1)}%`;}, 100 + i*80);
+  });
 }
 function exportOrdersCSV(){
   const f=getFilteredOrders();if(f.length===0)return showToast('Aucune commande à exporter','warn');
