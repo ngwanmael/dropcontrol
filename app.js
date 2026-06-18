@@ -738,7 +738,7 @@ function animateKPI(el, toVal, formatter, decimals=2) {
   el.dataset.rawVal = toVal;
   if (Math.abs(from - toVal) < 0.01) { el.textContent = formatter(toVal); return; }
   const duration = 600, start = performance.now();
-  el.classList.remove('kpi-updated'); void el.offsetWidth; el.classList.add('kpi-updated');
+  // Animation sans forcer reflow
   function tick(now) {
     const p = Math.min((now - start) / duration, 1);
     const eased = 1 - Math.pow(1 - p, 3);
@@ -1284,7 +1284,6 @@ function updateDashboardMetrics(){
   const pe=document.getElementById('dash-profit');
   pe.className=`text-2xl font-medium ${cur.netProfit<0?'text-red-400':'text-emerald-400'}`;
   animateKPI(pe, cur.netProfit, v=>`€${v.toFixed(2)}`);
-  flashCard('dash-profit');
   const ps=document.getElementById('dash-profit-compare');
   if(sc&&prev){const d=formatDelta(cur.netProfit,prev.netProfit,true);ps.innerHTML=`<span class="${d.colorClass} font-medium">${d.text}</span>`;}
   else{const p=currentConfig.monthlyGoal>0?(cur.netProfit/currentConfig.monthlyGoal)*100:0;ps.innerHTML=`${p.toFixed(1)}% de l'objectif (€${currentConfig.monthlyGoal})`;}
@@ -1296,25 +1295,24 @@ function updateDashboardMetrics(){
   // Commandes
   const oe=document.getElementById('dash-orders');
   animateKPI(oe, cur.orderCount, v=>Math.round(v).toString(), 0);
-  flashCard('dash-orders');
   const os=document.getElementById('dash-orders-compare');
   if(os){if(sc&&prev){const d=formatDelta(cur.orderCount,prev.orderCount,false);os.innerHTML=`<span class="${d.colorClass} font-medium">${d.text}</span>`;}else{os.innerText='Commandes au total';}}
 
   // CA
   const re=document.getElementById('dash-revenue');
-  if(re){animateKPI(re, cur.revenue, v=>`€${v.toFixed(2)}`);flashCard('dash-revenue');const rs=document.getElementById('dash-revenue-compare');if(rs){if(sc&&prev){const d=formatDelta(cur.revenue,prev.revenue,true);rs.innerHTML=`<span class="${d.colorClass} font-medium">${d.text}</span>`;}else{rs.innerText='Total encaissé';}}}
+  if(re){animateKPI(re, cur.revenue, v=>`€${v.toFixed(2)}`);const rs=document.getElementById('dash-revenue-compare');if(rs){if(sc&&prev){const d=formatDelta(cur.revenue,prev.revenue,true);rs.innerHTML=`<span class="${d.colorClass} font-medium">${d.text}</span>`;}else{rs.innerText='Total encaissé';}}}
 
   // Panier moyen
   const roi=document.getElementById('dash-roi');
   animateKPI(roi, cur.avgBasket, v=>`€${v.toFixed(2)}`);
-  flashCard('dash-roi');
+  
   const bs=document.getElementById('dash-basket-compare');
   if(bs){if(sc&&prev){const d=formatDelta(cur.avgBasket,prev.avgBasket,true);bs.innerHTML=`<span class="${d.colorClass} font-medium">${d.text}</span>`;}else{bs.innerText='Moyenne par vente';}}
 
   // Marge
   const mr=document.getElementById('dash-margin-rate');
   animateKPI(mr, cur.marginRate, v=>`${v.toFixed(1)}%`, 1);
-  flashCard('dash-margin-rate');
+  
   const ms2=document.getElementById('dash-margin-compare');
   if(ms2){if(sc&&prev){const d=formatDelta(cur.marginRate,prev.marginRate,false,true);ms2.innerHTML=`<span class="${d.colorClass} font-medium">${d.text}</span>`;}else{ms2.innerText='Santé globale du mois';}}
 
