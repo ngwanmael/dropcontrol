@@ -378,31 +378,10 @@ Réponds UNIQUEMENT en JSON valide sans backticks :
 
   try {
     const text = await geminiRequest(prompt, 1200);
-    let clean = text.replace(/```json|```/g,'').trim();
-    let result;
-    try {
-      result = JSON.parse(clean);
-    } catch {
-      // Extraction manuelle si JSON cassé
-      const extract = (key) => {
-        const m = clean.match(new RegExp(`"${key}"\\s*:\\s*([\\d.]+)`));
-        return m ? parseFloat(m[1]) : null;
-      };
-      const extractStr = (key) => {
-        const m = clean.match(new RegExp(`"${key}"\\s*:\\s*"([^"]+)"`));
-        return m ? m[1] : '';
-      };
-      result = {
-        prix_min: extract('prix_min'),
-        prix_optimal: extract('prix_optimal'),
-        prix_max: extract('prix_max'),
-        marge_min: extractStr('marge_min') || `${extract('marge_min')}%`,
-        marge_optimal: extractStr('marge_optimal') || `${extract('marge_optimal')}%`,
-        marge_max: extractStr('marge_max') || `${extract('marge_max')}%`,
-        explication: extractStr('explication') || 'Analyse disponible — données partielles.',
-        conseils: []
-      };
-    }
+    // Extraire le premier objet JSON valide de la réponse
+    const jsonMatch = text.match(/\{[\s\S]*\}/);
+    if (!jsonMatch) throw new Error('Aucun JSON trouvé dans la réponse');
+    const result = JSON.parse(jsonMatch[0]);
 
     clearInterval(window._marketStageInterval);
     document.getElementById('market-loading')?.classList.add('hidden');
