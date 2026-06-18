@@ -378,14 +378,31 @@ Réponds UNIQUEMENT en JSON valide sans backticks :
 
   try {
     const text = await geminiRequest(prompt, 1200);
-    // Nettoyage robuste du JSON
     let clean = text.replace(/```json|```/g,'').trim();
-    // Si JSON tronqué, tente de le fermer
-    if (!clean.endsWith('}')) {
-      const lastBrace = clean.lastIndexOf('}');
-      clean = lastBrace > 0 ? clean.slice(0, lastBrace + 1) + '}' : clean + '"}]}';
+    let result;
+    try {
+      result = JSON.parse(clean);
+    } catch {
+      // Extraction manuelle si JSON cassé
+      const extract = (key) => {
+        const m = clean.match(new RegExp(`"${key}"\\s*:\\s*([\\d.]+)`));
+        return m ? parseFloat(m[1]) : null;
+      };
+      const extractStr = (key) => {
+        const m = clean.match(new RegExp(`"${key}"\\s*:\\s*"([^"]+)"`));
+        return m ? m[1] : '';
+      };
+      result = {
+        prix_min: extract('prix_min'),
+        prix_optimal: extract('prix_optimal'),
+        prix_max: extract('prix_max'),
+        marge_min: extractStr('marge_min') || `${extract('marge_min')}%`,
+        marge_optimal: extractStr('marge_optimal') || `${extract('marge_optimal')}%`,
+        marge_max: extractStr('marge_max') || `${extract('marge_max')}%`,
+        explication: extractStr('explication') || 'Analyse disponible — données partielles.',
+        conseils: []
+      };
     }
-    const result = JSON.parse(clean);
 
     clearInterval(window._marketStageInterval);
     document.getElementById('market-loading')?.classList.add('hidden');
