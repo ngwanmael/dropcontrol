@@ -38,7 +38,7 @@ function hideLoader() {
 // ─── GEMINI REQUEST — retry automatique sur 429 ───────────
 async function geminiRequest(prompt, maxTokens = 800) {
   const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_KEY}`;
-  const body = JSON.stringify({ contents:[{parts:[{text:prompt}]}], generationConfig:{temperature:0.4, maxOutputTokens:maxTokens} });
+  const body = JSON.stringify({ contents:[{parts:[{text:prompt}]}], generationConfig:{temperature:0, maxOutputTokens:maxTokens} });
   for (let attempt = 0; attempt < 3; attempt++) {
     const res = await fetch(url, { method:'POST', headers:{'Content-Type':'application/json'}, body });
     if (res.status === 429) {
@@ -360,21 +360,15 @@ async function analyzeMarketInline() {
     if (stEl) { stEl.style.opacity='0'; setTimeout(()=>{ stEl.textContent=stages[sIdx]; stEl.style.opacity='1'; },200); }
   }, 1400);
 
-  const prompt = `Tu es un expert en revente de seconde main en France en 2026. Tu connais les prix pratiqués sur Vinted, Leboncoin, eBay France, Depop et les marchés aux puces.
+  const prompt = `Tu es un expert en revente de seconde main en France en 2026.
 
 Article : ${name}
-Coût d'achat réel : €${cost.toFixed(2)} par unité
-Prix de vente testé : €${selling.toFixed(2)}
-Catégorie : ${cat}
-État : ${etat}
-${det ? `Détails : ${det}` : ''}
+Coût d'achat : €${cost.toFixed(2)}/unité
+Prix testé : €${selling.toFixed(2)}
+Catégorie : ${cat} | État : ${etat}${det ? ` | Détails : ${det}` : ''}
 
-IMPORTANT : Sois honnête et objectif. Si tu manques d'information sur cet article précis, dis-le clairement plutôt que d'inventer des chiffres. Base-toi sur des articles similaires si nécessaire.
-
-Donne une recommandation de prix de vente sur le marché de revente français (Vinted, Leboncoin, eBay FR), avec une marge raisonnable pour un petit revendeur.
-
-Réponds UNIQUEMENT en JSON valide sans backticks :
-{"prix_min":4.90,"prix_optimal":7.90,"prix_max":11.90,"marge_min":"72%","marge_optimal":"84%","marge_max":"91%","explication":"2-3 phrases honnêtes","conseils":["Conseil 1","Conseil 2","Conseil 3"]}`;
+Ta réponse doit être EXCLUSIVEMENT un objet JSON valide, rien d'autre, pas de texte avant ni après, pas de backticks. Format exact :
+{"prix_min":6.90,"prix_optimal":9.90,"prix_max":14.90,"marge_min":"72%","marge_optimal":"84%","marge_max":"91%","explication":"Texte court et honnête en 2 phrases max.","conseils":["Conseil 1","Conseil 2","Conseil 3"]}`;
 
   try {
     const text = await geminiRequest(prompt, 1200);
