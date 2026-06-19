@@ -86,6 +86,12 @@ function initCustomSelect(sel) {
   sel.dataset.cs = '1';
   const wrap = document.createElement('div');
   wrap.className = 'cs-wrapper';
+  // Si le select était w-auto, ne pas forcer 100%
+  if (sel.classList.contains('w-auto') || sel.style.width === 'auto') {
+    wrap.style.display = 'inline-block';
+    wrap.style.width = 'auto';
+    wrap.style.minWidth = '160px';
+  }
   sel.parentNode.insertBefore(wrap, sel);
   wrap.appendChild(sel);
   sel.style.display = 'none';
