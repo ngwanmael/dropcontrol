@@ -360,18 +360,13 @@ async function analyzeMarketInline() {
     if (stEl) { stEl.style.opacity='0'; setTimeout(()=>{ stEl.textContent=stages[sIdx]; stEl.style.opacity='1'; },200); }
   }, 1400);
 
-  const prompt = `Tu es un expert en revente de seconde main en France en 2026.
+  const prompt = `Expert revente France 2026. Article: ${name}, coût €${cost.toFixed(2)}, prix testé €${selling.toFixed(2)}, catégorie: ${cat}, état: ${etat}${det?`, détails: ${det}`:''}.
 
-Article : ${name}
-Coût d'achat : €${cost.toFixed(2)}/unité
-Prix testé : €${selling.toFixed(2)}
-Catégorie : ${cat} | État : ${etat}${det ? ` | Détails : ${det}` : ''}
-
-Ta réponse doit être EXCLUSIVEMENT un objet JSON valide, rien d'autre, pas de texte avant ni après, pas de backticks. Format exact :
-{"prix_min":6.90,"prix_optimal":9.90,"prix_max":14.90,"marge_min":"72%","marge_optimal":"84%","marge_max":"91%","explication":"Texte court et honnête en 2 phrases max.","conseils":["Conseil 1","Conseil 2","Conseil 3"]}`;
+JSON UNIQUEMENT, pas de backticks:
+{"prix_min":0,"prix_optimal":0,"prix_max":0,"marge_min":"0%","marge_optimal":"0%","marge_max":"0%","explication":"2 phrases max","conseils":["conseil1","conseil2","conseil3"]}`;
 
   try {
-    const raw = await geminiRequest(prompt, 2048);
+    const raw = await geminiRequest(prompt, 4096);
     // Nettoie les backticks que Gemini ajoute malgré les instructions
     const text = raw.replace(/```json\s*/g,'').replace(/```\s*/g,'').trim();
     const jsonMatch = text.match(/\{[\s\S]*\}/);
