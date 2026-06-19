@@ -307,7 +307,7 @@ INSTRUCTIONS :
 QUESTION : ${question}`;
 
   try {
-    const text = await geminiRequest(prompt, 800);
+    const text = await geminiRequest(prompt, 2048);
     removeTypingIndicator();
     addAIMessage(formatDropAIResponse(text));
   } catch(e) {
