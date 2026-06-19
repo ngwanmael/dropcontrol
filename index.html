@@ -73,6 +73,9 @@
     .goal-bar-fill.over { animation:goal-pulse 1.8s ease-in-out infinite !important; }
     .top-bar-fill { transition:width 0.8s cubic-bezier(0.2,0.9,0.3,1) !important; }
 
+    /* Month selector — garde sa taille compacte */
+    .cs-wrapper:has(#dash-month-selector) { display:inline-block !important; width:auto !important; min-width:180px; }
+
     /* ── Hide native number spin buttons ── */
     input[type=number]::-webkit-inner-spin-button,
     input[type=number]::-webkit-outer-spin-button { -webkit-appearance:none; margin:0; }
