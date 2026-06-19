@@ -371,20 +371,12 @@ Ta réponse doit être EXCLUSIVEMENT un objet JSON valide, rien d'autre, pas de 
 {"prix_min":6.90,"prix_optimal":9.90,"prix_max":14.90,"marge_min":"72%","marge_optimal":"84%","marge_max":"91%","explication":"Texte court et honnête en 2 phrases max.","conseils":["Conseil 1","Conseil 2","Conseil 3"]}`;
 
   try {
-    const text = await geminiRequest(prompt, 1200);
-    // Gemini 2.5 peut ajouter du texte de réflexion avant le JSON
-    // On cherche le dernier { } valide dans la réponse
-    let result = null;
-    const matches = [...text.matchAll(/\{[^{}]*(?:\{[^{}]*\}[^{}]*)?\}/g)];
-    for (const m of matches.reverse()) {
-      try { result = JSON.parse(m[0]); if (result.prix_optimal) break; } catch {}
-    }
-    // Fallback : chercher le bloc JSON le plus large
-    if (!result) {
-      const big = text.match(/\{[\s\S]*"prix_min"[\s\S]*\}/);
-      if (big) try { result = JSON.parse(big[0]); } catch {}
-    }
-    if (!result) throw new Error('Réponse non structurée — réessaie');
+    const raw = await geminiRequest(prompt, 1200);
+    // Nettoie les backticks que Gemini ajoute malgré les instructions
+    const text = raw.replace(/```json\s*/g,'').replace(/```\s*/g,'').trim();
+    const jsonMatch = text.match(/\{[\s\S]*\}/);
+    if (!jsonMatch) throw new Error('Réponse non structurée — réessaie');
+    const result = JSON.parse(jsonMatch[0]);
 
 
     clearInterval(window._marketStageInterval);
