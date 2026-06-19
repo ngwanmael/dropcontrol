@@ -372,10 +372,20 @@ Ta réponse doit être EXCLUSIVEMENT un objet JSON valide, rien d'autre, pas de 
 
   try {
     const text = await geminiRequest(prompt, 1200);
-    // Extraire le premier objet JSON valide de la réponse
-    const jsonMatch = text.match(/\{[\s\S]*\}/);
-    if (!jsonMatch) throw new Error('Aucun JSON trouvé dans la réponse');
-    const result = JSON.parse(jsonMatch[0]);
+    // Gemini 2.5 peut ajouter du texte de réflexion avant le JSON
+    // On cherche le dernier { } valide dans la réponse
+    let result = null;
+    const matches = [...text.matchAll(/\{[^{}]*(?:\{[^{}]*\}[^{}]*)?\}/g)];
+    for (const m of matches.reverse()) {
+      try { result = JSON.parse(m[0]); if (result.prix_optimal) break; } catch {}
+    }
+    // Fallback : chercher le bloc JSON le plus large
+    if (!result) {
+      const big = text.match(/\{[\s\S]*"prix_min"[\s\S]*\}/);
+      if (big) try { result = JSON.parse(big[0]); } catch {}
+    }
+    if (!result) throw new Error('Réponse non structurée — réessaie');
+
 
     clearInterval(window._marketStageInterval);
     document.getElementById('market-loading')?.classList.add('hidden');
