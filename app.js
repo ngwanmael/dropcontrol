@@ -1180,9 +1180,10 @@ function renderStock(){
     const displayQty=s.originalQty??s.initialQty;
     const pct=displayQty>0?Math.min(100,(s.currentQty/displayQty)*100):0;
     const barColor=pct>60?'var(--accent)':pct>25?'var(--warn)':'var(--danger)';
+    const [avbg,avborder,avcolor]=isLow?['rgba(248,113,113,0.12)','rgba(248,113,113,0.25)','#f87171']:avatarColor(s.name);
     const row=document.createElement('div');row.className='inv-grid-row'+(isLow?' row-low':'');row.style.animationDelay=`${idx*40}ms`;
     row.innerHTML=`
-      <div class="inv-name-cell"><div class="inv-avatar">${av}</div><span class="inv-name-txt" title="${s.name}">${s.name}</span></div>
+      <div class="inv-name-cell"><div class="inv-avatar" style="background:${avbg};border-color:${avborder};color:${avcolor};width:38px;height:38px;font-size:13px">${av}</div><span class="inv-name-txt" title="${s.name}">${s.name}</span></div>
       <div class="inv-cell">€${s.totalCost.toFixed(2)}</div>
       <div class="inv-cell-c">${displayQty}</div>
       <div class="inv-stock ${isLow?'low':'ok'}">
@@ -1226,11 +1227,22 @@ document.getElementById('btn-add-order').addEventListener('click',()=>{
   buildMonthSelector();renderStock();populateOrderSelect();renderOrders();updateDashboardMetrics();showToast(`Commande de ${customer} enregistrée`);
 });
 
+// Couleur avatar basée sur le nom
+function avatarColor(name='') {
+  const p=[['rgba(124,58,237,0.18)','rgba(124,58,237,0.35)','#a78bfa'],['rgba(52,211,153,0.15)','rgba(52,211,153,0.3)','#34d399'],['rgba(96,165,250,0.15)','rgba(96,165,250,0.3)','#60a5fa'],['rgba(251,191,36,0.15)','rgba(251,191,36,0.3)','#fbbf24'],['rgba(248,113,113,0.15)','rgba(248,113,113,0.3)','#f87171'],['rgba(34,211,238,0.15)','rgba(34,211,238,0.3)','#22d3ee'],['rgba(167,139,250,0.15)','rgba(167,139,250,0.3)','#c4b5fd'],['rgba(16,185,129,0.15)','rgba(16,185,129,0.3)','#10b981']];
+  let h=0;for(let i=0;i<name.length;i++)h=name.charCodeAt(i)+((h<<5)-h);
+  return p[Math.abs(h)%p.length];
+}
+
+let orderStatusFilter='all';
+
 function renderOrders(){
   const listEl=document.getElementById('orders-list');if(!listEl)return;listEl.innerHTML='';
   const q=(orderSearchQuery||'').trim().toLowerCase();
-  let list=[...orders].reverse();if(q)list=list.filter(o=>(o.customer||'').toLowerCase().includes(q)||(o.productName||'').toLowerCase().includes(q));
-  document.getElementById('order-counter').innerText=q?`${list.length} / ${orders.length} Order(s)`:`${orders.length} Order(s) Total`;
+  let list=[...orders].reverse();
+  if(q)list=list.filter(o=>(o.customer||'').toLowerCase().includes(q)||(o.productName||'').toLowerCase().includes(q));
+  if(orderStatusFilter!=='all')list=list.filter(o=>o.status===orderStatusFilter);
+  document.getElementById('order-counter').innerText=`${list.length} / ${orders.length} Order(s)`;
   if(list.length===0){listEl.innerHTML=`<div class="orders-empty">${q?'Aucune commande ne correspond.':'Aucune commande pour le moment…'}</div>`;return;}
   const SC={'En cours':'status-encours','Expédié':'status-expedie','Livré':'status-livre'};
   const isMobile=window.innerWidth<=768;
@@ -1240,12 +1252,12 @@ function renderOrders(){
     row.className='order-row';row.style.animationDelay=`${idx*30}ms`;
     const dateISO=o.date?new Date(o.date).toISOString().split('T')[0]:'';
 
+    const [abg,aborder,acolor]=avatarColor(o.customer||'');
     if(isMobile){
-      // ── LAYOUT MOBILE : 3 lignes propres ──
       row.innerHTML=`
         <div style="display:flex;align-items:center;justify-content:space-between;gap:8px">
           <div class="order-client-wrap" style="min-width:0;overflow:hidden">
-            <div class="order-avatar">${initials(o.customer)}</div>
+            <div class="order-avatar" style="background:${abg};border-color:${aborder};color:${acolor}">${initials(o.customer)}</div>
             <div class="order-client-info">
               <div class="order-customer-name mob-name">${o.customer}</div>
               <span class="order-date mob-date">${formatDate(o.date)} ✎</span>
@@ -1274,7 +1286,7 @@ function renderOrders(){
     } else {
       // ── LAYOUT DESKTOP : grille 5 colonnes ──
       const cClient=document.createElement('div');
-      cClient.innerHTML=`<div class="order-client-wrap"><div class="order-avatar">${initials(o.customer)}</div><div class="order-client-info"><div class="order-customer-name" title="Modifier le nom">${o.customer}</div><span class="order-date" title="Modifier la date">${formatDate(o.date)} ✎</span></div></div>`;
+      cClient.innerHTML=`<div class="order-client-wrap"><div class="order-avatar" style="background:${abg};border-color:${aborder};color:${acolor}">${initials(o.customer)}</div><div class="order-client-info"><div class="order-customer-name" title="Modifier le nom">${o.customer}</div><span class="order-date" title="Modifier la date">${formatDate(o.date)} ✎</span></div></div>`;
       cClient.querySelector('.order-customer-name').addEventListener('click',function(e){openFloatingEdit(e.currentTarget,'text',o.customer,v=>{const ord=orders.find(x=>x.id===o.id);if(!ord)return;ord.customer=v.trim()||ord.customer;saveOrders();renderOrders();updateDashboardMetrics();});});
       cClient.querySelector('.order-date').addEventListener('click',function(e){e.stopPropagation();openFloatingEdit(e.currentTarget,'date',dateISO,v=>{if(!v)return;const ord=orders.find(x=>x.id===o.id);if(!ord)return;const tp=ord.date?ord.date.slice(11):'12:00:00.000Z';ord.date=v+'T'+tp;saveOrders();buildMonthSelector();renderOrders();updateDashboardMetrics();showToast('Date mise à jour');});});
       const cArticle=document.createElement('div');
@@ -1468,6 +1480,17 @@ function exportOrdersCSV(){
   const a=document.createElement('a');a.href=url;a.download=`dropcontrol_orders_${period}_${today}.csv`;document.body.appendChild(a);a.click();a.remove();URL.revokeObjectURL(url);
 }
 document.getElementById('btn-export-csv').addEventListener('click',exportOrdersCSV);
+
+// Status filter buttons
+document.querySelectorAll('#status-filters .status-filter-btn').forEach(btn=>{
+  btn.addEventListener('click',()=>{
+    orderStatusFilter=btn.dataset.filter;
+    document.querySelectorAll('#status-filters .status-filter-btn').forEach(b=>b.className='status-filter-btn');
+    const cls={'all':'active-all','En cours':'active-encours','Expédié':'active-expedie','Livré':'active-livre'};
+    btn.classList.add(cls[orderStatusFilter]||'active-all');
+    renderOrders();
+  });
+});
 
 const reapproModal=document.getElementById('reappro-modal');let reapproStockId=null;
 function openReapproModal(id){const s=stocks.find(s=>s.id===id);if(!s)return;reapproStockId=id;document.getElementById('reappro-stock-name').textContent=`${s.name} — ${s.currentQty} u. en stock`;document.getElementById('reappro-qty').value=10;document.getElementById('reappro-cost').value=0;showModal(reapproModal);}

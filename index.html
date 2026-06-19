@@ -73,7 +73,36 @@
     .goal-bar-fill.over { animation:goal-pulse 1.8s ease-in-out infinite !important; }
     .top-bar-fill { transition:width 0.8s cubic-bezier(0.2,0.9,0.3,1) !important; }
 
-    /* ── Loader IA ── */
+    /* ── Scrollbar custom violet ── */
+    ::-webkit-scrollbar { width:5px; height:5px; }
+    ::-webkit-scrollbar-track { background:transparent; }
+    ::-webkit-scrollbar-thumb { background:rgba(139,92,246,0.25); border-radius:4px; }
+    ::-webkit-scrollbar-thumb:hover { background:rgba(139,92,246,0.5); }
+    * { scrollbar-width:thin; scrollbar-color:rgba(139,92,246,0.25) transparent; }
+
+    /* ── Select custom ── */
+    select {
+      appearance:none; -webkit-appearance:none;
+      background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='rgba(255,255,255,0.4)' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+      background-repeat:no-repeat; background-position:right 12px center;
+      padding-right:32px !important; cursor:pointer;
+    }
+    select option { background:#1a1a24; color:white; }
+
+    /* ── Status filter buttons ── */
+    .status-filter-btn {
+      display:inline-flex; align-items:center; gap:6px;
+      padding:6px 14px; border-radius:20px; font-size:11px; font-weight:600;
+      cursor:pointer; border:1px solid rgba(255,255,255,0.1);
+      background:rgba(255,255,255,0.04); color:rgba(255,255,255,0.45);
+      transition:all 0.2s cubic-bezier(0.2,0.9,0.3,1);
+    }
+    .status-filter-btn:hover { background:rgba(255,255,255,0.08); color:white; transform:translateY(-1px); }
+    .status-filter-btn.active-all { background:rgba(255,255,255,0.1); color:white; border-color:rgba(255,255,255,0.2); }
+    .status-filter-btn.active-encours { background:rgba(251,191,36,0.12); color:#fbbf24; border-color:rgba(251,191,36,0.3); }
+    .status-filter-btn.active-expedie { background:rgba(96,165,250,0.12); color:#60a5fa; border-color:rgba(96,165,250,0.3); }
+    .status-filter-btn.active-livre { background:rgba(52,211,153,0.12); color:#34d399; border-color:rgba(52,211,153,0.3); }
+    .status-filter-dot { width:6px; height:6px; border-radius:50%; background:currentColor; }
     @keyframes loader-orbit-1 { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }
     @keyframes loader-orbit-2 { from{transform:rotate(180deg)} to{transform:rotate(540deg)} }
     @keyframes loader-center-pulse { 0%,100%{transform:translate(-50%,-50%) scale(1);box-shadow:0 0 0 0 rgba(139,92,246,0.4)} 50%{transform:translate(-50%,-50%) scale(1.1);box-shadow:0 0 0 10px rgba(139,92,246,0)} }
@@ -1639,7 +1668,15 @@
       </div>
       <div class="panel-glass rounded-2xl p-6">
         <div class="flex items-center justify-between mb-6 flex-wrap gap-3">
-          <h3 class="text-lg text-white font-medium">Recent Orders</h3>
+          <div class="flex items-center gap-2 flex-wrap">
+            <h3 class="text-lg text-white font-medium">Recent Orders</h3>
+            <div class="flex items-center gap-1.5 ml-2" id="status-filters">
+              <button class="status-filter-btn active-all" data-filter="all">Tous</button>
+              <button class="status-filter-btn" data-filter="En cours"><span class="status-filter-dot"></span>En cours</button>
+              <button class="status-filter-btn" data-filter="Expédié"><span class="status-filter-dot" style="background:#60a5fa"></span>Expédié</button>
+              <button class="status-filter-btn" data-filter="Livré"><span class="status-filter-dot" style="background:#34d399"></span>Livré</button>
+            </div>
+          </div>
           <div class="flex items-center gap-3">
             <div class="search-box"><input id="order-search" type="text" class="search-input" placeholder="Rechercher client ou article…"><i data-lucide="search"></i></div>
             <button id="btn-export-csv" class="text-xs bg-white/5 hover:bg-white/10 border border-white/10 text-white px-3 py-1.5 rounded-lg transition flex items-center gap-1.5"><i data-lucide="download" class="w-3.5 h-3.5"></i> Export CSV</button>
