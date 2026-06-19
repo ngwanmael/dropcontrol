@@ -139,7 +139,11 @@ function initCustomSelect(sel) {
 }
 
 function initAllCustomSelects() {
-  document.querySelectorAll('select').forEach(s => initCustomSelect(s));
+  document.querySelectorAll('select').forEach(s => {
+    // Skip month selector — garde son style natif compact
+    if (s.id === 'dash-month-selector') return;
+    initCustomSelect(s);
+  });
 }
 
 // ─── CUSTOM NUMBER STEPPER ────────────────────────────────
