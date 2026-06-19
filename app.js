@@ -80,7 +80,58 @@ function initRealtime() {
     .subscribe();
 }
 
-// ─── DROP AI ─────────────────────────────────────────────
+// ─── RAPPORT MENSUEL ──────────────────────────────────────
+function generateRapportMensuel() {
+  const filtered = getFilteredOrders();
+  const stats = computeStats(filtered);
+  const period = activeMonthFilter === 'all' ? 'Toutes périodes' : (() => {
+    const [y,m] = activeMonthFilter.split('-');
+    return new Date(+y, +m-1, 1).toLocaleDateString('fr-FR', {month:'long', year:'numeric'});
+  })();
+  const topProd = {};
+  filtered.forEach(o => {
+    if (!topProd[o.productName]) topProd[o.productName] = {qty:0, rev:0};
+    topProd[o.productName].qty += o.qty||1;
+    topProd[o.productName].rev += o.totalReceived;
+  });
+  const top3 = Object.entries(topProd).sort((a,b)=>b[1].rev-a[1].rev).slice(0,3);
+  const goalPct = stats.monthlyGoal > 0 ? (stats.netProfit/currentConfig.monthlyGoal*100).toFixed(1) : null;
+  const tr = (parseFloat(currentConfig.initialCapital)||0)
+    + orders.reduce((a,o)=>a+o.totalReceived,0)
+    - stocks.reduce((a,s)=>a+s.totalCost,0)
+    - orders.reduce((a,o)=>a+(o.feeFixedAtTime??currentConfig.feeFixed)+(o.totalReceived*((o.feePctAtTime??currentConfig.feePercent)/100)),0);
+
+  const lines = [
+    { label:'📅 Période', value: period },
+    { label:'💰 Profit Net', value: `€${stats.netProfit.toFixed(2)}`, color: stats.netProfit >= 0 ? '#34d399' : '#f87171' },
+    { label:'📈 Chiffre d\'Affaires', value: `€${stats.revenue.toFixed(2)}` },
+    { label:'🛍 Commandes', value: `${stats.orderCount}` },
+    { label:'🧾 Panier Moyen', value: `€${stats.avgBasket.toFixed(2)}` },
+    { label:'📊 Taux de Marge', value: `${stats.marginRate.toFixed(1)}%` },
+    { label:'🏦 Trésorerie', value: `€${tr.toFixed(2)}` },
+    currentConfig.monthlyGoal > 0 ? { label:'🎯 Objectif', value: `€${currentConfig.monthlyGoal} — ${goalPct}% atteint ${parseFloat(goalPct)>=100?'✅':'⏳'}` } : null,
+  ].filter(Boolean);
+
+  const el = document.getElementById('rapport-content');
+  el.innerHTML = [
+    ...lines.map(l => `<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 12px;background:rgba(255,255,255,0.03);border-radius:10px;border:1px solid rgba(255,255,255,0.06)"><span style="color:rgba(255,255,255,0.6);font-size:12px">${l.label}</span><span style="font-weight:700;color:${l.color||'white'};font-size:13px">${l.value}</span></div>`),
+    top3.length ? `<div style="padding:10px 12px;background:rgba(255,255,255,0.03);border-radius:10px;border:1px solid rgba(255,255,255,0.06)"><p style="color:rgba(255,255,255,0.4);font-size:10px;text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px">🏆 Top Produits</p>${top3.map((([n,d],i)=>`<div style="display:flex;justify-content:space-between;margin-bottom:4px"><span style="color:rgba(255,255,255,0.7);font-size:12px">${['🥇','🥈','🥉'][i]} ${n}</span><span style="color:#34d399;font-weight:600;font-size:12px">${fmtEur(d.rev)}</span></div>`)).join('')}</div>` : ''
+  ].join('');
+
+  document.getElementById('rapport-period').textContent = period;
+  showModal(document.getElementById('rapport-modal'));
+  if (window.lucide) lucide.createIcons();
+
+  document.getElementById('btn-rapport-copy').onclick = () => {
+    const text = `📊 RAPPORT DROPCONTROL — ${period}\n\n` +
+      lines.map(l => `${l.label}: ${l.value}`).join('\n') +
+      (top3.length ? `\n\n🏆 TOP PRODUITS\n${top3.map(([n,d],i)=>`${['🥇','🥈','🥉'][i]} ${n}: ${fmtEur(d.rev)}`).join('\n')}` : '');
+    navigator.clipboard.writeText(text).then(() => showToast('Rapport copié !', 'success'));
+  };
+}
+
+document.getElementById('btn-rapport-close')?.addEventListener('click', () => hideModal(document.getElementById('rapport-modal')));
+document.getElementById('btn-rapport-close2')?.addEventListener('click', () => hideModal(document.getElementById('rapport-modal')));
 const DAI_PHRASES = ['Quoi de neuf ?','On fait le point ?','Pose-moi ta question','Je t\'écoute','Qu\'est-ce qu\'on regarde ensemble ?','Dis-moi ce que tu veux savoir','Par où on commence ?'];
 let _daiPhraseIdx = 0, _daiPhraseTimer = null;
 

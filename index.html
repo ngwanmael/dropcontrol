@@ -222,9 +222,9 @@
     .inv-empty { padding:36px 0; text-align:center; color:rgba(255,255,255,0.28); font-style:italic; font-size:14px; }
 
     /* ORDERS GRID */
-    .orders-head,.order-row { display:grid; grid-template-columns:2fr 2fr 1.2fr 1.4fr 1.1fr; align-items:center; gap:16px; width:100%; box-sizing:border-box; }
-    .orders-head { padding:0 14px 12px; border-bottom:1px solid rgba(255,255,255,0.1); font-size:10.5px; text-transform:uppercase; letter-spacing:0.08em; color:rgba(255,255,255,0.32); font-weight:600; }
-    .orders-head>span:last-child { text-align:right; }
+    .orders-head,.order-row { display:grid; grid-template-columns:1.8fr 1.6fr 1fr 1.1fr 90px; align-items:center; gap:14px; width:100%; box-sizing:border-box; }
+    .orders-head { padding:0 18px 12px; border-bottom:1px solid rgba(255,255,255,0.1); font-size:10.5px; text-transform:uppercase; letter-spacing:0.08em; color:rgba(255,255,255,0.32); font-weight:600; }
+    .orders-head>span:nth-child(3),.orders-head>span:nth-child(5) { text-align:right; }
     .orders-list { display:flex; flex-direction:column; }
     .order-row { padding:12px 14px; border-radius:12px; border:1px solid transparent; position:relative; transition:background 0.2s,border-color 0.2s,transform 0.1s; animation:order-in 0.32s cubic-bezier(0.2,0.9,0.3,1) both; }
     @keyframes order-in { from{opacity:0;transform:translateY(6px)} to{opacity:1;transform:none} }
@@ -1406,6 +1406,10 @@
           <div class="flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span><p class="text-sm font-medium text-white/60">Période :</p></div>
           <select id="dash-month-selector" class="calculator-input py-1.5 px-4 text-sm bg-white/5 border-white/10 rounded-xl outline-none text-white font-medium cursor-pointer w-auto"><option value="all">Toutes périodes</option></select>
           <div class="flex items-center gap-2 bg-white/5 border border-white/10 px-4 py-1.5 rounded-xl text-sm text-white/70"><span class="text-xs text-white/40 uppercase tracking-wider font-medium mr-1">Trésorerie :</span><span id="dash-budget-display" class="font-semibold text-white">€0.00</span><svg id="treso-sparkline" class="treso-sparkline" width="60" height="20" viewBox="0 0 60 20"></svg></div>
+          <button onclick="generateRapportMensuel()" style="display:flex;align-items:center;gap:7px;padding:7px 14px;border-radius:12px;background:rgba(139,92,246,0.1);border:1px solid rgba(139,92,246,0.25);color:#a78bfa;font-size:12px;font-weight:600;cursor:pointer;transition:all 0.2s" onmouseover="this.style.background='rgba(139,92,246,0.18)'" onmouseout="this.style.background='rgba(139,92,246,0.1)'">
+            <i data-lucide="file-bar-chart" style="width:14px;height:14px"></i>
+            Rapport
+          </button>
         </div>
       </div>
       <section class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 mb-10">
@@ -1818,6 +1822,32 @@
     </div>
   </div>
 
+  <!-- RAPPORT MENSUEL -->
+  <div id="rapport-modal" class="fixed inset-0 z-[400] hidden items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+    <div class="panel-glass rounded-2xl p-6 w-full max-w-lg">
+      <div class="flex items-center justify-between mb-5">
+        <div class="flex items-center gap-3">
+          <div style="width:36px;height:36px;border-radius:10px;background:rgba(139,92,246,0.15);border:1px solid rgba(139,92,246,0.25);display:flex;align-items:center;justify-content:center">
+            <i data-lucide="file-bar-chart" style="width:16px;height:16px;color:#a78bfa"></i>
+          </div>
+          <div>
+            <h3 class="text-white font-semibold text-base">Rapport Mensuel</h3>
+            <p id="rapport-period" class="text-xs text-white/35"></p>
+          </div>
+        </div>
+        <button id="btn-rapport-close" class="p-1.5 rounded-lg hover:bg-white/10 text-gray-400 hover:text-white transition"><i data-lucide="x" class="w-4 h-4"></i></button>
+      </div>
+      <div id="rapport-content" class="space-y-3 max-h-96 overflow-y-auto text-sm"></div>
+      <div class="flex gap-3 mt-5">
+        <button id="btn-rapport-copy" class="flex-1 py-2.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-sm font-medium hover:bg-emerald-500/20 transition flex items-center justify-center gap-2">
+          <i data-lucide="copy" style="width:14px;height:14px"></i>
+          Copier
+        </button>
+        <button id="btn-rapport-close2" class="flex-1 py-2.5 rounded-xl bg-white/5 border border-white/10 text-white/60 text-sm hover:bg-white/10 transition">Fermer</button>
+      </div>
+    </div>
+  </div>
+
   <!-- BOTTOM NAV — mobile uniquement -->
   <nav class="bottom-nav" id="bottom-nav">
     <button class="bnav-item active" id="mob-dashboard">
@@ -1831,9 +1861,12 @@
       </div>
       <span>Stock</span>
     </button>
-    <button class="bnav-item" id="mob-products">
-      <div class="bnav-icon"><i data-lucide="tag" style="width:21px;height:21px"></i></div>
-      <span>Produits</span>
+    <button class="bnav-item" id="mob-dropai" onclick="openDropAI()">
+      <div class="bnav-icon" style="position:relative">
+        <i data-lucide="sparkles" style="width:21px;height:21px;color:#a78bfa;filter:drop-shadow(0 0 6px rgba(167,139,250,0.7))"></i>
+        <span style="position:absolute;top:-2px;right:-2px;width:7px;height:7px;border-radius:50%;background:#34d399;box-shadow:0 0 6px #34d399"></span>
+      </div>
+      <span style="background:linear-gradient(135deg,#a78bfa,#34d399);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;font-weight:600">Drop AI</span>
     </button>
     <button class="bnav-item" id="mob-orders">
       <div class="bnav-icon"><i data-lucide="shopping-bag" style="width:21px;height:21px"></i></div>
