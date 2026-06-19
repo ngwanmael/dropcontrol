@@ -363,10 +363,26 @@ async function analyzeMarketInline() {
     if (stEl) { stEl.style.opacity='0'; setTimeout(()=>{ stEl.textContent=stages[sIdx]; stEl.style.opacity='1'; },200); }
   }, 1400);
 
-  const prompt = `Expert revente France 2026. Article: ${name}, coût €${cost.toFixed(2)}, ${selling>0?`prix testé €${selling.toFixed(2)}`:'prix de vente non défini — suggère le meilleur prix'}, catégorie: ${cat}, état: ${etat}${det?`, détails: ${det}`:''}.
+  const prompt = `Tu es un expert en revente de seconde main en France en 2026. Tu connais parfaitement les prix pratiqués sur Vinted, Leboncoin, eBay France et Depop.
 
-JSON UNIQUEMENT, pas de backticks:
-{"prix_min":0,"prix_optimal":0,"prix_max":0,"marge_min":"0%","marge_optimal":"0%","marge_max":"0%","explication":"2 phrases max","conseils":["conseil1","conseil2","conseil3"]}`;
+ARTICLE À ANALYSER :
+- Nom : ${name}
+- Coût d'achat réel : €${cost.toFixed(2)}
+- Catégorie : ${cat}
+- État : ${etat}
+${selling > 0 ? `- Prix de vente testé : €${selling.toFixed(2)}` : '- Prix de vente : non défini, suggère le prix optimal'}
+${det ? `- Détails : ${det}` : ''}
+
+INSTRUCTIONS :
+1. Analyse le marché de revente français pour cet article spécifique
+2. Les prix doivent être RÉALISTES et basés sur ce qui se vend vraiment
+3. Les marges sont calculées sur : (prix_vente - coût_achat) / prix_vente × 100
+4. Si tu manques d'info sur cet article précis, base-toi sur des articles similaires et dis-le dans l'explication
+5. Sois honnête — si l'article est difficile à revendre ou si la marge est faible, dis-le clairement
+6. Prix minimum = point d'entrée pour vendre vite, Prix optimal = meilleur équilibre marge/vitesse, Prix maximum = si patient et article rare
+
+Réponds EXCLUSIVEMENT avec ce JSON, sans backticks, sans texte avant ou après :
+{"prix_min":0.00,"prix_optimal":0.00,"prix_max":0.00,"marge_min":"0%","marge_optimal":"0%","marge_max":"0%","explication":"Analyse honnête en 2-3 phrases avec les chiffres clés","conseils":["Conseil concret 1","Conseil concret 2","Conseil concret 3"]}`;
 
   try {
     const raw = await geminiRequest(prompt, 4096);
