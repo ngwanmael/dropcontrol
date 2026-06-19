@@ -81,24 +81,23 @@ function initRealtime() {
 }
 
 // ─── CUSTOM SELECT ────────────────────────────────────────
+function initAllCustomSelects() {
+  document.querySelectorAll('select').forEach(s => initCustomSelect(s));
+}
+
 function initCustomSelect(sel) {
   if (!sel || sel.dataset.cs) return;
   sel.dataset.cs = '1';
+  const naturalWidth = sel.offsetWidth;
+  const isAutoWidth = sel.classList.contains('w-auto') || (naturalWidth > 0 && naturalWidth < 280);
   const wrap = document.createElement('div');
   wrap.className = 'cs-wrapper';
-  // Si le select était w-auto, ne pas forcer 100%
-  if (sel.classList.contains('w-auto') || sel.style.width === 'auto') {
-    wrap.style.display = 'inline-block';
-    wrap.style.width = 'auto';
-    wrap.style.minWidth = '160px';
-  }
+  if (isAutoWidth) { wrap.style.display='inline-block'; wrap.style.minWidth=naturalWidth?`${naturalWidth}px`:'140px'; }
   sel.parentNode.insertBefore(wrap, sel);
   wrap.appendChild(sel);
   sel.style.display = 'none';
   const trigger = document.createElement('div');
-  // Copy classes from select (calculator-input, text-sm, etc.)
   trigger.className = `cs-trigger ${[...sel.classList].join(' ')}`;
-  // Copy explicit styles except display
   const st = sel.getAttribute('style');
   if (st) trigger.setAttribute('style', st.replace(/display[^;]*;?/g,''));
   const dropdown = document.createElement('div');
@@ -137,16 +136,6 @@ function initCustomSelect(sel) {
   wrap.insertBefore(trigger, sel);
   wrap.appendChild(dropdown);
 }
-
-function initAllCustomSelects() {
-  document.querySelectorAll('select').forEach(s => {
-    // Skip month selector — garde son style natif compact
-    if (s.id === 'dash-month-selector') return;
-    initCustomSelect(s);
-  });
-}
-
-// ─── CUSTOM NUMBER STEPPER ────────────────────────────────
 function initNumStepper(inputId) {
   const input = document.getElementById(inputId);
   if (!input || input.dataset.stepper) return;
