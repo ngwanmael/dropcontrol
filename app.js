@@ -1292,6 +1292,35 @@ function formatDelta(cur,prev,isCur=true,isPct=false){
   return{text:`${arrow} ${vs} (${sign}${pct.toFixed(0)}% vs mois préc.)`,colorClass:color};
 }
 
+  // KPI trend badges
+  function setTrend(id, cur, prev) {
+    const el = document.getElementById(id); if(!el) return;
+    if (!prev && prev !== 0) { el.className='kpi-trend kpi-trend-flat'; el.textContent=''; return; }
+    const diff = cur - prev;
+    if (Math.abs(diff) < 0.01) { el.className='kpi-trend kpi-trend-flat'; el.textContent='→'; return; }
+    el.className = `kpi-trend ${diff>0?'kpi-trend-up':'kpi-trend-down'}`;
+    el.textContent = diff>0?'▲':'▼';
+  }
+
+  // Trésorerie sparkline
+  function renderTresoSparkline() {
+    const svg = document.getElementById('treso-sparkline'); if(!svg) return;
+    const sorted = [...orders].sort((a,b)=>new Date(a.date)-new Date(b.date)).slice(-12);
+    if(sorted.length < 2) { svg.innerHTML=''; return; }
+    let cumP = 0; const pts = sorted.map(o => {
+      const fee=(o.feeFixedAtTime??currentConfig.feeFixed)+o.totalReceived*((o.feePctAtTime??currentConfig.feePercent)/100);
+      const cost=(o.unitCostItem??0)*(o.qty||1);
+      cumP+=o.totalReceived-fee-cost; return cumP;
+    });
+    const mn=Math.min(...pts),mx=Math.max(...pts),range=mx-mn||1;
+    const W=60,H=20,pad=2;
+    const tx=i=>(i/(pts.length-1))*(W-pad*2)+pad;
+    const ty=v=>H-pad-((v-mn)/range)*(H-pad*2);
+    const d=pts.map((p,i)=>`${i===0?'M':'L'}${tx(i).toFixed(1)} ${ty(p).toFixed(1)}`).join(' ');
+    const color=pts[pts.length-1]>=pts[0]?'#34d399':'#f87171';
+    svg.innerHTML=`<path d="${d}" fill="none" stroke="${color}" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" opacity="0.8"/><circle cx="${tx(pts.length-1).toFixed(1)}" cy="${ty(pts[pts.length-1]).toFixed(1)}" r="2" fill="${color}"/>`;
+  }
+
 function updateDashboardMetrics(){
   const filtered=getFilteredOrders(),cur=computeStats(filtered);
   const sc=activeMonthFilter!=='all',prev=sc?computeStats(getOrdersForMonth(getPrevKey(activeMonthFilter))):null;
@@ -1349,6 +1378,15 @@ function updateDashboardMetrics(){
 
   if(window.lucide)lucide.createIcons();
   updateSidebarBadge();renderTopProducts(filtered);renderSVGChart(filtered);
+  renderTresoSparkline();
+  // Trend badges
+  if(sc&&prev){
+    setTrend('trend-profit', cur.netProfit, prev.netProfit);
+    setTrend('trend-revenue', cur.revenue, prev.revenue);
+    setTrend('trend-orders', cur.orderCount, prev.orderCount);
+    setTrend('trend-basket', cur.avgBasket, prev.avgBasket);
+    setTrend('trend-margin', cur.marginRate, prev.marginRate);
+  }
 }
 function markAsShipped(id){const o=orders.find(o=>o.id===id);if(!o)return;if(o.status==='Livré'){showToast(`Déjà livrée`,'warn');return;}o.status=o.status==='En cours'?'Expédié':'Livré';saveOrders();renderOrders();updateDashboardMetrics();showToast(`${o.customer} → ${o.status}`);}
 function renderTopProducts(fo){

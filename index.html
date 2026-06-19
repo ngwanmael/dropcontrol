@@ -54,30 +54,49 @@
     @keyframes nav-pulse { 0%{box-shadow:inset 0 0 0 1px rgba(52,211,153,0.4)} 100%{box-shadow:inset 0 0 0 1px rgba(52,211,153,0.15),0 0 20px rgba(52,211,153,0.06)} }
     .nav-item.just-clicked { animation:nav-pulse 0.5s ease-out; }
 
-    .view-enter { animation:view-in 0.28s cubic-bezier(0.2,0.9,0.3,1) both; }
-    @keyframes view-in { from{opacity:0;transform:translateY(14px) scale(0.99)} to{opacity:1;transform:none} }
+    /* ── View transitions smoother ── */
+    .view-enter { animation:view-in 0.38s cubic-bezier(0.2,0.9,0.3,1) both; }
+    @keyframes view-in { from{opacity:0;transform:translateY(18px) scale(0.985)} to{opacity:1;transform:none} }
 
     /* Catalog row hover premium */
-    .cat-grid-row:hover {
-      background:rgba(255,255,255,0.035) !important;
-      border-color:rgba(52,211,153,0.12) !important;
-      transform:translateY(-1px);
-      box-shadow:0 4px 20px rgba(0,0,0,0.3) !important;
-    }
+    .cat-grid-row:hover { background:rgba(255,255,255,0.035) !important; border-color:rgba(52,211,153,0.12) !important; transform:translateY(-1px); box-shadow:0 4px 20px rgba(0,0,0,0.3) !important; }
 
     /* Stock progress bar */
     .stock-level-bar { height:3px; border-radius:3px; background:rgba(255,255,255,0.06); margin-top:4px; overflow:hidden; }
     .stock-level-fill { height:100%; border-radius:3px; transition:width 0.6s cubic-bezier(0.3,0.9,0.3,1); }
 
-    /* Metric card hover premium — version unique */
+    /* Metric card */
     @keyframes kpi-pop { 0%{transform:scale(1)} 40%{transform:scale(1.03)} 100%{transform:scale(1)} }
 
-    /* Goal bar glow when complete */
+    /* Goal bar */
     @keyframes goal-pulse { 0%,100%{box-shadow:0 0 0 0 rgba(52,211,153,0.5)} 50%{box-shadow:0 0 10px 3px rgba(52,211,153,0.2)} }
     .goal-bar-fill.over { animation:goal-pulse 1.8s ease-in-out infinite !important; }
-
-    /* Top products bars animation */
     .top-bar-fill { transition:width 0.8s cubic-bezier(0.2,0.9,0.3,1) !important; }
+
+    /* ── Loader IA ── */
+    @keyframes loader-orbit-1 { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }
+    @keyframes loader-orbit-2 { from{transform:rotate(180deg)} to{transform:rotate(540deg)} }
+    @keyframes loader-center-pulse { 0%,100%{transform:translate(-50%,-50%) scale(1);box-shadow:0 0 0 0 rgba(139,92,246,0.4)} 50%{transform:translate(-50%,-50%) scale(1.1);box-shadow:0 0 0 10px rgba(139,92,246,0)} }
+
+    /* ── Simulator inputs focus ── */
+    .calculator-input { transition:border-color 0.2s, box-shadow 0.2s, background 0.2s !important; }
+    .calculator-input:focus { border-color:rgba(139,92,246,0.5) !important; box-shadow:0 0 0 3px rgba(139,92,246,0.08), 0 0 14px rgba(139,92,246,0.1) !important; background:rgba(139,92,246,0.04) !important; outline:none !important; }
+
+    /* ── Simulator output animation ── */
+    @keyframes sim-out-pop { 0%{opacity:0.5;transform:translateY(4px) scale(0.96)} 65%{transform:translateY(-1px) scale(1.03)} 100%{opacity:1;transform:none} }
+    .sim-flash { animation:sim-out-pop 0.38s cubic-bezier(0.2,0.9,0.3,1) both !important; }
+
+    /* ── KPI trend badge ── */
+    .kpi-trend { display:inline-flex;align-items:center;gap:3px;font-size:10px;font-weight:700;padding:2px 7px;border-radius:20px;transition:all 0.3s;margin-left:6px; }
+    .kpi-trend-up   { background:rgba(52,211,153,0.12);color:#34d399;border:1px solid rgba(52,211,153,0.2); }
+    .kpi-trend-down { background:rgba(248,113,113,0.12);color:#f87171;border:1px solid rgba(248,113,113,0.2); }
+    .kpi-trend-flat { background:rgba(255,255,255,0.05);color:rgba(255,255,255,0.35);border:1px solid rgba(255,255,255,0.08); }
+
+    /* ── Order rows aéré ── */
+    .order-row { padding:15px 18px !important; }
+
+    /* ── Trésorerie sparkline ── */
+    .treso-sparkline { display:inline-block;vertical-align:middle;margin-left:10px;opacity:0.8; }
 
     /* Chart */
     @keyframes chart-fade-in { from{opacity:0} to{opacity:1} }
@@ -1270,9 +1289,24 @@
 <body class="min-h-screen text-gray-300">
 
   <!-- Écran de chargement Supabase -->
-  <div id="app-loader" style="position:fixed;inset:0;z-index:600;background:#0d0d10;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;transition:opacity 0.3s;">
-    <div style="width:38px;height:38px;border-radius:50%;border:3px solid rgba(52,211,153,0.15);border-top-color:#34d399;animation:dc-spin 0.75s linear infinite;"></div>
-    <p style="color:rgba(255,255,255,0.35);font-size:13px;font-family:'DM Sans',sans-serif;letter-spacing:0.02em;">Synchronisation…</p>
+  <div id="app-loader" style="position:fixed;inset:0;z-index:600;background:#0d0d10;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:24px;transition:opacity 0.3s;">
+    <div style="position:relative;width:72px;height:72px">
+      <div style="position:absolute;inset:0;border-radius:50%;border:1px dashed rgba(139,92,246,0.2);animation:loader-orbit-1 3s linear infinite"></div>
+      <div style="position:absolute;inset:-12px;border-radius:50%;border:1px dashed rgba(52,211,153,0.15);animation:loader-orbit-2 5s linear infinite"></div>
+      <div style="position:absolute;inset:0;border-radius:50%;animation:loader-orbit-1 2.5s linear infinite">
+        <div style="position:absolute;width:7px;height:7px;border-radius:50%;background:#a78bfa;box-shadow:0 0 8px rgba(167,139,250,0.9);top:-3.5px;left:50%;margin-left:-3.5px"></div>
+      </div>
+      <div style="position:absolute;inset:-12px;border-radius:50%;animation:loader-orbit-2 4s linear infinite">
+        <div style="position:absolute;width:6px;height:6px;border-radius:50%;background:#34d399;box-shadow:0 0 8px rgba(52,211,153,0.9);top:-3px;left:50%;margin-left:-3px"></div>
+      </div>
+      <div style="position:absolute;top:50%;left:50%;width:38px;height:38px;background:linear-gradient(135deg,rgba(139,92,246,0.2),rgba(52,211,153,0.1));border:1px solid rgba(139,92,246,0.35);border-radius:12px;display:flex;align-items:center;justify-content:center;animation:loader-center-pulse 2s ease-in-out infinite">
+        <i data-lucide="sparkles" style="width:17px;height:17px;color:#a78bfa"></i>
+      </div>
+    </div>
+    <div style="text-align:center">
+      <p style="background:linear-gradient(135deg,#a78bfa,#34d399);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;font-size:16px;font-weight:700;font-family:'DM Sans',sans-serif;">DropControl</p>
+      <p style="color:rgba(255,255,255,0.3);font-size:12px;font-family:'DM Sans',sans-serif;margin-top:5px;letter-spacing:0.03em">Synchronisation…</p>
+    </div>
   </div>
   <style>@keyframes dc-spin{to{transform:rotate(360deg)}}</style>
 
@@ -1371,15 +1405,15 @@
         <div class="flex items-center gap-4 flex-wrap ml-auto">
           <div class="flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span><p class="text-sm font-medium text-white/60">Période :</p></div>
           <select id="dash-month-selector" class="calculator-input py-1.5 px-4 text-sm bg-white/5 border-white/10 rounded-xl outline-none text-white font-medium cursor-pointer w-auto"><option value="all">Toutes périodes</option></select>
-          <div class="flex items-center gap-2 bg-white/5 border border-white/10 px-4 py-1.5 rounded-xl text-sm text-white/70"><span class="text-xs text-white/40 uppercase tracking-wider font-medium mr-1">Trésorerie :</span><span id="dash-budget-display" class="font-semibold text-white">€0.00</span></div>
+          <div class="flex items-center gap-2 bg-white/5 border border-white/10 px-4 py-1.5 rounded-xl text-sm text-white/70"><span class="text-xs text-white/40 uppercase tracking-wider font-medium mr-1">Trésorerie :</span><span id="dash-budget-display" class="font-semibold text-white">€0.00</span><svg id="treso-sparkline" class="treso-sparkline" width="60" height="20" viewBox="0 0 60 20"></svg></div>
         </div>
       </div>
       <section class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 mb-10">
-        <div id="kpi-profit"  class="metric-card rounded-2xl p-6"><div class="flex justify-between items-start mb-2"><p class="text-xs uppercase tracking-widest opacity-50">Net Profit</p><i data-lucide="trending-up" class="w-4 h-4 text-emerald-400"></i></div><p id="dash-profit" class="text-2xl text-emerald-400 font-medium">€0.00</p><p id="dash-profit-compare" class="text-xs mt-3 opacity-50">Objectif du mois ciblé</p><div class="goal-bar-track"><div id="dash-goal-bar" class="goal-bar-fill" style="width:0%"></div></div></div>
-        <div id="kpi-revenue" class="metric-card rounded-2xl p-6"><div class="flex justify-between items-start mb-2"><p class="text-xs uppercase tracking-widest opacity-50">Chiffre d'affaires</p><i data-lucide="dollar-sign" class="w-4 h-4 text-blue-400"></i></div><p id="dash-revenue" class="text-2xl text-white font-medium">€0.00</p><p id="dash-revenue-compare" class="text-xs mt-3 opacity-40">Total encaissé</p></div>
-        <div id="kpi-orders" class="metric-card rounded-2xl p-6"><div class="flex justify-between items-start mb-2"><p class="text-xs uppercase tracking-widest opacity-50">Orders</p><i data-lucide="shopping-bag" class="w-4 h-4 text-white/50"></i></div><p id="dash-orders" class="text-2xl text-white font-medium">0</p><p id="dash-orders-compare" class="text-xs mt-3 opacity-40">Commandes au total</p></div>
-        <div id="kpi-basket" class="metric-card rounded-2xl p-6"><div class="flex justify-between items-start mb-2"><p class="text-xs uppercase tracking-widest opacity-50">Panier Moyen</p><i data-lucide="credit-card" class="w-4 h-4 text-white/50"></i></div><p id="dash-roi" class="text-2xl text-white font-medium">€0.00</p><p id="dash-basket-compare" class="text-xs mt-3 opacity-40">Moyenne par vente</p></div>
-        <div id="kpi-margin" class="metric-card rounded-2xl p-6"><div class="flex justify-between items-start mb-2"><p class="text-xs uppercase tracking-widest opacity-50">Taux de Marge</p><i data-lucide="percent" class="w-4 h-4 text-emerald-400"></i></div><p id="dash-margin-rate" class="text-2xl text-white font-medium">0.0%</p><p id="dash-margin-compare" class="text-xs mt-3 opacity-40">Santé globale du mois</p></div>
+        <div id="kpi-profit"  class="metric-card rounded-2xl p-6"><div class="flex justify-between items-start mb-2"><p class="text-xs uppercase tracking-widest opacity-50">Net Profit</p><i data-lucide="trending-up" class="w-4 h-4 text-emerald-400"></i></div><p id="dash-profit" class="text-2xl text-emerald-400 font-medium">€0.00<span id="trend-profit" class="kpi-trend kpi-trend-flat" style="font-size:9px;vertical-align:middle"></span></p><p id="dash-profit-compare" class="text-xs mt-3 opacity-50">Objectif du mois ciblé</p><div class="goal-bar-track"><div id="dash-goal-bar" class="goal-bar-fill" style="width:0%"></div></div></div>
+        <div id="kpi-revenue" class="metric-card rounded-2xl p-6"><div class="flex justify-between items-start mb-2"><p class="text-xs uppercase tracking-widest opacity-50">Chiffre d'affaires</p><i data-lucide="dollar-sign" class="w-4 h-4 text-blue-400"></i></div><p id="dash-revenue" class="text-2xl text-white font-medium">€0.00<span id="trend-revenue" class="kpi-trend kpi-trend-flat" style="font-size:9px;vertical-align:middle"></span></p><p id="dash-revenue-compare" class="text-xs mt-3 opacity-40">Total encaissé</p></div>
+        <div id="kpi-orders" class="metric-card rounded-2xl p-6"><div class="flex justify-between items-start mb-2"><p class="text-xs uppercase tracking-widest opacity-50">Orders</p><i data-lucide="shopping-bag" class="w-4 h-4 text-white/50"></i></div><p id="dash-orders" class="text-2xl text-white font-medium">0<span id="trend-orders" class="kpi-trend kpi-trend-flat" style="font-size:9px;vertical-align:middle"></span></p><p id="dash-orders-compare" class="text-xs mt-3 opacity-40">Commandes au total</p></div>
+        <div id="kpi-basket" class="metric-card rounded-2xl p-6"><div class="flex justify-between items-start mb-2"><p class="text-xs uppercase tracking-widest opacity-50">Panier Moyen</p><i data-lucide="credit-card" class="w-4 h-4 text-white/50"></i></div><p id="dash-roi" class="text-2xl text-white font-medium">€0.00<span id="trend-basket" class="kpi-trend kpi-trend-flat" style="font-size:9px;vertical-align:middle"></span></p><p id="dash-basket-compare" class="text-xs mt-3 opacity-40">Moyenne par vente</p></div>
+        <div id="kpi-margin" class="metric-card rounded-2xl p-6"><div class="flex justify-between items-start mb-2"><p class="text-xs uppercase tracking-widest opacity-50">Taux de Marge</p><i data-lucide="percent" class="w-4 h-4 text-emerald-400"></i></div><p id="dash-margin-rate" class="text-2xl text-white font-medium">0.0%<span id="trend-margin" class="kpi-trend kpi-trend-flat" style="font-size:9px;vertical-align:middle"></span></p><p id="dash-margin-compare" class="text-xs mt-3 opacity-40">Santé globale du mois</p></div>
       </section>
       <div class="grid grid-cols-1 xl:grid-cols-3 gap-6">
         <div class="panel-glass xl:col-span-2 rounded-2xl p-6"><h3 class="text-xs text-white/80 mb-6 font-medium uppercase tracking-wider">Sales Trend (Live)</h3><svg id="chart-svg" viewBox="0 0 600 200" class="w-full h-48" style="overflow:visible"><line x1="50" y1="20" x2="600" y2="20" stroke="rgba(255,255,255,0.04)" stroke-width="1"/><line x1="50" y1="62" x2="600" y2="62" stroke="rgba(255,255,255,0.03)" stroke-width="1"/><line x1="50" y1="105" x2="600" y2="105" stroke="rgba(255,255,255,0.04)" stroke-width="1"/><line x1="50" y1="148" x2="600" y2="148" stroke="rgba(255,255,255,0.03)" stroke-width="1"/><line x1="50" y1="190" x2="600" y2="190" stroke="rgba(255,255,255,0.06)" stroke-width="1"/><text id="chart-txt-max" x="0" y="24" fill="rgba(255,255,255,0.3)" font-size="10" font-weight="500">€100</text><text id="chart-txt-mid" x="0" y="109" fill="rgba(255,255,255,0.2)" font-size="10">€50</text><text x="0" y="194" fill="rgba(255,255,255,0.2)" font-size="10">€0</text></svg></div>
