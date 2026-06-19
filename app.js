@@ -37,7 +37,7 @@ function hideLoader() {
 
 // ─── GEMINI REQUEST — retry automatique sur 429 ───────────
 async function geminiRequest(prompt, maxTokens = 800) {
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_KEY}`;
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_KEY}`;
   const body = JSON.stringify({ contents:[{parts:[{text:prompt}]}], generationConfig:{temperature:0, maxOutputTokens:maxTokens} });
   for (let attempt = 0; attempt < 3; attempt++) {
     const res = await fetch(url, { method:'POST', headers:{'Content-Type':'application/json'}, body });
