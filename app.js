@@ -80,7 +80,92 @@ function initRealtime() {
     .subscribe();
 }
 
-// ─── RAPPORT MENSUEL ──────────────────────────────────────
+// ─── CUSTOM SELECT ────────────────────────────────────────
+function initCustomSelect(sel) {
+  if (!sel || sel.dataset.cs) return;
+  sel.dataset.cs = '1';
+  const wrap = document.createElement('div');
+  wrap.className = 'cs-wrapper';
+  sel.parentNode.insertBefore(wrap, sel);
+  wrap.appendChild(sel);
+  sel.style.display = 'none';
+  const trigger = document.createElement('div');
+  // Copy classes from select (calculator-input, text-sm, etc.)
+  trigger.className = `cs-trigger ${[...sel.classList].join(' ')}`;
+  // Copy explicit styles except display
+  const st = sel.getAttribute('style');
+  if (st) trigger.setAttribute('style', st.replace(/display[^;]*;?/g,''));
+  const dropdown = document.createElement('div');
+  dropdown.className = 'cs-dropdown';
+  const arrow = `<svg class="cs-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M6 9l6 6 6-6"/></svg>`;
+  function syncTrigger() {
+    const o = sel.options[sel.selectedIndex];
+    trigger.innerHTML = `<span class="cs-value">${o ? o.text : '—'}</span>${arrow}`;
+  }
+  function buildDropdown() {
+    dropdown.innerHTML = '';
+    [...sel.options].forEach(o => {
+      const div = document.createElement('div');
+      div.className = 'cs-option' + (o.value === sel.value ? ' cs-selected' : '');
+      div.textContent = o.text;
+      div.addEventListener('click', e => {
+        e.stopPropagation();
+        sel.value = o.value;
+        sel.dispatchEvent(new Event('change', {bubbles:true}));
+        syncTrigger();
+        dropdown.classList.remove('open');
+        trigger.classList.remove('open');
+      });
+      dropdown.appendChild(div);
+    });
+  }
+  trigger.addEventListener('click', e => {
+    e.stopPropagation();
+    const isOpen = dropdown.classList.contains('open');
+    document.querySelectorAll('.cs-dropdown.open').forEach(d => { d.classList.remove('open'); d.parentNode?.querySelector('.cs-trigger')?.classList.remove('open'); });
+    if (!isOpen) { buildDropdown(); dropdown.classList.add('open'); trigger.classList.add('open'); }
+  });
+  document.addEventListener('click', () => { dropdown.classList.remove('open'); trigger.classList.remove('open'); });
+  new MutationObserver(syncTrigger).observe(sel, {childList:true, subtree:true});
+  syncTrigger();
+  wrap.insertBefore(trigger, sel);
+  wrap.appendChild(dropdown);
+}
+
+function initAllCustomSelects() {
+  document.querySelectorAll('select').forEach(s => initCustomSelect(s));
+}
+
+// ─── CUSTOM NUMBER STEPPER ────────────────────────────────
+function initNumStepper(inputId) {
+  const input = document.getElementById(inputId);
+  if (!input || input.dataset.stepper) return;
+  input.dataset.stepper = '1';
+  const step = parseFloat(input.step) || 1;
+  const min  = input.min !== '' ? parseFloat(input.min) : -Infinity;
+  const wrap = document.createElement('div');
+  wrap.className = 'num-stepper';
+  input.parentNode.insertBefore(wrap, input);
+  wrap.appendChild(input);
+  const mkBtn = (label, cls, action) => {
+    const b = document.createElement('button');
+    b.type='button'; b.className=`step-btn ${cls}`; b.textContent=label;
+    b.addEventListener('click', () => {
+      const cur = parseFloat(input.value)||0;
+      const nv = Math.max(min, action(cur, step));
+      input.value = step < 1 ? nv.toFixed(2) : String(Math.round(nv));
+      input.dispatchEvent(new Event('input',{bubbles:true}));
+      input.dispatchEvent(new Event('change',{bubbles:true}));
+    });
+    return b;
+  };
+  wrap.insertBefore(mkBtn('−','step-btn-minus',(v,s)=>v-s), input);
+  wrap.appendChild(mkBtn('+','step-btn-plus',(v,s)=>v+s));
+}
+
+function initAllSteppers() {
+  ['order-qty','inp-qty','stock-qty'].forEach(initNumStepper);
+}
 function generateRapportMensuel() {
   const filtered = getFilteredOrders();
   const stats = computeStats(filtered);
@@ -1205,8 +1290,11 @@ function renderStock(){
 }
 function populateOrderSelect(){
   const sel=document.getElementById('order-product-select'),av=stocks.filter(s=>s.currentQty>0);sel.innerHTML='';
-  if(av.length===0){sel.innerHTML='<option value="">Aucun article disponible</option>';return;}
-  av.forEach(s=>{const opt=document.createElement('option');opt.value=s.id;opt.innerText=`${s.name} (Reste : ${s.currentQty})`;sel.appendChild(opt);});
+  if(av.length===0){sel.innerHTML='<option value="">Aucun article disponible</option>';}
+  else{av.forEach(s=>{const opt=document.createElement('option');opt.value=s.id;opt.innerText=`${s.name} (Reste : ${s.currentQty})`;sel.appendChild(opt);});}
+  // Refresh custom select trigger text
+  const trigger=sel.parentNode?.querySelector('.cs-trigger .cs-value');
+  if(trigger){const o=sel.options[sel.selectedIndex];trigger.textContent=o?o.text:'—';}
 }
 
 // ─── COMMANDES ────────────────────────────────────────────
@@ -1691,6 +1779,7 @@ function startApp(){
   const now=new Date(),ck=`${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
   activeMonthFilter=orders.some(o=>{if(!o.date)return false;const d=new Date(o.date);return`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`===ck;})?ck:'all';
   buildMonthSelector();renderStock();populateOrderSelect();renderProducts();renderOrders();calculateSimulator();updateDashboardMetrics();
+  setTimeout(()=>{ initAllCustomSelects(); initAllSteppers(); }, 150);
 
   // Sync temps réel entre appareils
   initRealtime();

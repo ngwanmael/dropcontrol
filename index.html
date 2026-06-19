@@ -73,7 +73,54 @@
     .goal-bar-fill.over { animation:goal-pulse 1.8s ease-in-out infinite !important; }
     .top-bar-fill { transition:width 0.8s cubic-bezier(0.2,0.9,0.3,1) !important; }
 
-    /* ── Scrollbar custom violet ── */
+    /* ── Hide native number spin buttons ── */
+    input[type=number]::-webkit-inner-spin-button,
+    input[type=number]::-webkit-outer-spin-button { -webkit-appearance:none; margin:0; }
+    input[type=number] { -moz-appearance:textfield; }
+
+    /* ── Custom Select ── */
+    .cs-wrapper { position:relative; display:block; width:100%; }
+    .cs-trigger {
+      display:flex; align-items:center; justify-content:space-between; gap:8px;
+      cursor:pointer; user-select:none;
+    }
+    .cs-trigger:hover { border-color:rgba(139,92,246,0.4) !important; }
+    .cs-trigger.open { border-color:rgba(139,92,246,0.5) !important; box-shadow:0 0 0 3px rgba(139,92,246,0.08) !important; }
+    .cs-value { flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .cs-arrow { width:14px; height:14px; flex-shrink:0; transition:transform 0.2s; opacity:0.4; }
+    .cs-trigger.open .cs-arrow { transform:rotate(180deg); opacity:0.7; }
+    @keyframes cs-in { from{opacity:0;transform:translateY(-8px) scale(0.97)} to{opacity:1;transform:none} }
+    .cs-dropdown {
+      position:absolute; top:calc(100% + 6px); left:0; right:0; z-index:300;
+      background:#16161f; border:1px solid rgba(139,92,246,0.25);
+      border-radius:12px; overflow:hidden; display:none;
+      box-shadow:0 12px 40px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.04);
+      max-height:220px; overflow-y:auto;
+    }
+    .cs-dropdown.open { display:block; animation:cs-in 0.2s cubic-bezier(0.2,0.9,0.3,1) both; }
+    .cs-option {
+      padding:10px 14px; font-size:13px; color:rgba(255,255,255,0.7);
+      cursor:pointer; transition:background 0.15s, color 0.15s;
+      border-bottom:1px solid rgba(255,255,255,0.04);
+    }
+    .cs-option:last-child { border-bottom:none; }
+    .cs-option:hover { background:rgba(139,92,246,0.1); color:white; }
+    .cs-option.cs-selected { background:rgba(139,92,246,0.15); color:#a78bfa; font-weight:600; }
+    .cs-option.cs-selected::after { content:'✓'; float:right; opacity:0.7; }
+
+    /* ── Number stepper ── */
+    .num-stepper { display:flex; align-items:stretch; width:100%; }
+    .num-stepper input { flex:1; text-align:center; border-radius:0 !important; border-left:none !important; border-right:none !important; min-width:0; }
+    .step-btn {
+      width:38px; flex-shrink:0; display:flex; align-items:center; justify-content:center;
+      background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.1);
+      color:rgba(255,255,255,0.5); cursor:pointer; font-size:18px; font-weight:300;
+      transition:all 0.15s; line-height:1; padding:0;
+    }
+    .step-btn-minus { border-radius:10px 0 0 10px; border-right:none; }
+    .step-btn-plus  { border-radius:0 10px 10px 0; border-left:none; }
+    .step-btn:hover { background:rgba(139,92,246,0.15); color:#a78bfa; border-color:rgba(139,92,246,0.3); }
+    .step-btn:active { transform:scale(0.9); }
     ::-webkit-scrollbar { width:5px; height:5px; }
     ::-webkit-scrollbar-track { background:transparent; }
     ::-webkit-scrollbar-thumb { background:rgba(139,92,246,0.25); border-radius:4px; }
