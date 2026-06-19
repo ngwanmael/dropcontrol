@@ -1281,8 +1281,7 @@ function renderOrders(){
       cArticle.innerHTML=`<div class="order-article-wrap"><span class="order-article-name" title="${o.productName}">${o.productName}</span><span class="qty-pill" title="Modifier la quantité">×${o.qty||1}</span></div>`;
       cArticle.querySelector('.qty-pill').addEventListener('click',function(e){openFloatingEdit(e.currentTarget,'number',o.qty||1,v=>{const nq=parseInt(v);if(isNaN(nq)||nq<=0){renderOrders();return;}const ord=orders.find(x=>x.id===o.id);if(!ord)return;const st=stocks.find(s=>s.id===ord.stockId),diff=nq-(ord.qty||1);if(st&&diff>0&&st.currentQty<diff){showToast(`Stock insuffisant : ${st.currentQty} u.`,'warn');renderOrders();return;}if(st){st.currentQty-=diff;saveStocks();}ord.qty=nq;saveOrders();renderOrders();renderStock();populateOrderSelect();updateDashboardMetrics();});});
       const cAmount=document.createElement('div');
-      cAmount.style.textAlign='right';
-      cAmount.innerHTML=`<span class="order-amount" title="Modifier" style="font-weight:700;font-size:14px">€${o.totalReceived.toFixed(2)}</span>`;
+      cAmount.innerHTML=`<span class="order-amount" title="Modifier">€${o.totalReceived.toFixed(2)}</span>`;
       cAmount.querySelector('.order-amount').addEventListener('click',function(e){openFloatingEdit(e.currentTarget,'number',o.totalReceived,v=>{const p=parseFloat(v);if(isNaN(p)||p<0)return;const ord=orders.find(x=>x.id===o.id);if(!ord)return;ord.totalReceived=p;saveOrders();renderOrders();updateDashboardMetrics();});});
       const cStatus=document.createElement('div');
       cStatus.innerHTML=`<span class="status-badge ${SC[o.status]||'status-encours'}" title="Changer">${o.status}</span>`;
