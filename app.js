@@ -337,8 +337,8 @@ function resetMarketInline() {
 async function analyzeMarketInline() {
   if (!GEMINI_KEY) { showToast('Clé Gemini non configurée','error'); return; }
   const name    = document.getElementById('inp-product-name')?.value.trim();
-  const cost    = parseFloat(document.getElementById('inp-cost')?.value);
-  const selling = parseFloat(document.getElementById('inp-selling')?.value) || 0;
+  const cost    = parseFloat(document.getElementById('inp-cost')?.value?.replace(',','.'));
+  const selling = parseFloat(document.getElementById('inp-selling')?.value?.replace(',','.')) || 0;
   const etat    = document.getElementById('market-etat')?.value || 'Neuf';
   const cat     = document.getElementById('market-cat')?.value || 'Bijoux / Accessoires';
   const det     = document.getElementById('market-details')?.value.trim() || '';
@@ -363,7 +363,7 @@ async function analyzeMarketInline() {
     if (stEl) { stEl.style.opacity='0'; setTimeout(()=>{ stEl.textContent=stages[sIdx]; stEl.style.opacity='1'; },200); }
   }, 1400);
 
-  const prompt = `Expert revente France 2026. Article: ${name}, coût €${cost.toFixed(2)}, prix testé €${selling.toFixed(2)}, catégorie: ${cat}, état: ${etat}${det?`, détails: ${det}`:''}.
+  const prompt = `Expert revente France 2026. Article: ${name}, coût €${cost.toFixed(2)}, ${selling>0?`prix testé €${selling.toFixed(2)}`:'prix de vente non défini — suggère le meilleur prix'}, catégorie: ${cat}, état: ${etat}${det?`, détails: ${det}`:''}.
 
 JSON UNIQUEMENT, pas de backticks:
 {"prix_min":0,"prix_optimal":0,"prix_max":0,"marge_min":"0%","marge_optimal":"0%","marge_max":"0%","explication":"2 phrases max","conseils":["conseil1","conseil2","conseil3"]}`;
