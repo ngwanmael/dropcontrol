@@ -371,7 +371,7 @@ Ta réponse doit être EXCLUSIVEMENT un objet JSON valide, rien d'autre, pas de 
 {"prix_min":6.90,"prix_optimal":9.90,"prix_max":14.90,"marge_min":"72%","marge_optimal":"84%","marge_max":"91%","explication":"Texte court et honnête en 2 phrases max.","conseils":["Conseil 1","Conseil 2","Conseil 3"]}`;
 
   try {
-    const raw = await geminiRequest(prompt, 1200);
+    const raw = await geminiRequest(prompt, 2048);
     // Nettoie les backticks que Gemini ajoute malgré les instructions
     const text = raw.replace(/```json\s*/g,'').replace(/```\s*/g,'').trim();
     const jsonMatch = text.match(/\{[\s\S]*\}/);
