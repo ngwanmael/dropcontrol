@@ -40,17 +40,17 @@ function initSplash() {
   });
 }
 
-function hideLoader() {
+function hideLoader(quick=false) {
   const l = document.getElementById('app-loader');
   const bar = document.getElementById('splash-bar');
   if (!l) return;
-  // Barre → 100% puis attendre un peu avant de partir
   if (bar) { bar.style.transition='width 0.4s ease'; bar.style.width='100%'; }
+  const delay = quick ? 150 : 900;
   setTimeout(() => {
     l.style.opacity = '0';
     l.style.transform = 'scale(1.04)';
     setTimeout(() => { l.style.display = 'none'; }, 650);
-  }, 900); // 900ms après la fin du chargement = on voit bien l'intro
+  }, delay);
 }
 
 // ─── GEMINI REQUEST — retry automatique sur 429 ───────────
@@ -1897,13 +1897,16 @@ if(bpm)bpm.addEventListener('click',()=>{
 });
 
 document.addEventListener('DOMContentLoaded', async () => {
-  initSplash(); // Lance l'animation du splash
+  initSplash();
+  let hasSession = false;
   try {
     await initStorage();
+    const { data } = await db.auth.getSession();
+    hasSession = !!data?.session;
   } catch(e) {
     console.error('Init error:', e);
   } finally {
-    hideLoader();
+    hideLoader(hasSession); // court si déjà connecté, long sinon
   }
   initLockScreen(startApp);
 });
