@@ -989,6 +989,12 @@ const views={dashboard:document.getElementById('view-dashboard'),stock:document.
 const navBtns={dashboard:document.getElementById('btn-dashboard'),stock:document.getElementById('btn-stock'),products:document.getElementById('btn-products'),orders:document.getElementById('btn-orders')};
 const PAGE_TITLES={dashboard:['Overview','Welcome back to your command center'],stock:['Stock & Inventaire','Gérez vos approvisionnements et lots de bijoux'],products:['Products & Margin','Simulateur de rentabilité et fiches produits'],orders:['Orders Tracking','Suivi en temps réel de vos commandes clients']};
 function switchView(t){
+  if(t==='orders'){
+    // Reset filtre statut quand on arrive sur Orders
+    orderStatusFilter='all';
+    document.querySelectorAll('#status-filters .status-filter-btn').forEach(b=>b.className='status-filter-btn');
+    document.querySelector('#status-filters .status-filter-btn[data-filter="all"]')?.classList.add('active-all');
+  }
   Object.keys(views).forEach(k=>{const iT=k===t;views[k].classList.toggle('hidden',!iT);if(iT){views[k].classList.remove('view-enter');void views[k].offsetWidth;views[k].classList.add('view-enter');}navBtns[k].classList.toggle('active',iT);navBtns[k].classList.toggle('opacity-60',!iT);});
   const[ti,su]=PAGE_TITLES[t];document.getElementById('page-title').innerText=ti;document.getElementById('page-subtitle').innerText=su;
   const b=navBtns[t];if(b){b.classList.remove('just-clicked');void b.offsetWidth;b.classList.add('just-clicked');}
@@ -1056,7 +1062,12 @@ function buildMonthSelector(){
   const months=[...ms].sort((a,b)=>b.localeCompare(a));const now=new Date();
   sel.innerHTML='<option value="all">Toutes périodes</option>';
   months.forEach(m=>{const[y,mo]=m.split('-'),label=new Date(+y,+mo-1,1).toLocaleDateString('fr-FR',{month:'long',year:'numeric'}),cur=+y===now.getFullYear()&&+mo===now.getMonth()+1;const opt=document.createElement('option');opt.value=m;opt.innerText=label.charAt(0).toUpperCase()+label.slice(1)+(cur?' (En cours)':' (Archivé)');sel.appendChild(opt);});
-  sel.value=activeMonthFilter;
+  // Restaure la valeur active (ou pointe sur le mois actuel si dispo)
+  if(activeMonthFilter!=='all'&&[...sel.options].some(o=>o.value===activeMonthFilter)){sel.value=activeMonthFilter;}
+  else{sel.value='all';activeMonthFilter='all';}
+  // Sync custom select trigger manuellement
+  const trigger=sel.parentNode?.querySelector('.cs-trigger .cs-value');
+  if(trigger){const o=sel.options[sel.selectedIndex];if(o)trigger.textContent=o.text;}
 }
 document.getElementById('dash-month-selector').addEventListener('change',e=>{activeMonthFilter=e.target.value;updateDashboardMetrics();});
 function getFilteredOrders(){if(activeMonthFilter==='all')return orders;return orders.filter(o=>{if(!o.date)return false;const d=new Date(o.date);return`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`===activeMonthFilter;});}
@@ -1598,7 +1609,7 @@ function updateDashboardMetrics(){
           <div class="todo-avatar" style="background:${avbg};color:${avcolor}">${initials(o.customer)}</div>
           <div style="flex:1;min-width:0">
             <div style="font-size:13px;font-weight:600;color:white;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${o.customer}</div>
-            <div style="font-size:10px;color:rgba(255,255,255,0.35);margin-top:1px">${formatDate(o.date)}</div>
+            <div style="font-size:10px;color:rgba(255,255,255,0.35);margin-top:1px">${formatDate(o.date)}${(()=>{const days=o.date?Math.floor((Date.now()-new Date(o.date))/86400000):0;return days>7?` <span style="color:#f87171;font-weight:600">· ${days}j</span>`:''})()}</div>
           </div>
           <span style="font-size:10px;font-weight:700;padding:3px 8px;border-radius:20px;${isEncours?'background:rgba(251,191,36,0.12);color:#fbbf24;border:1px solid rgba(251,191,36,0.25)':'background:rgba(96,165,250,0.12);color:#60a5fa;border:1px solid rgba(96,165,250,0.25)'}">${o.status}</span>
         </div>
@@ -1952,14 +1963,15 @@ function startApp(){
   if(main){main.style.opacity='0';main.style.transform='translateY(16px)';requestAnimationFrame(()=>{main.style.transition='opacity 0.6s 0.1s ease,transform 0.6s 0.1s cubic-bezier(0.2,0.9,0.3,1)';main.style.opacity='1';main.style.transform='none';});}
   if(sidebar){sidebar.style.opacity='0';requestAnimationFrame(()=>{sidebar.style.transition='opacity 0.5s ease';sidebar.style.opacity='1';});}
   setTimeout(()=>{ initAllCustomSelects(); initAllSteppers(); }, 150);
-  // Engrenage settings — accélère au hover, ralentit au départ
+  // Engrenage settings — accélère au hover, ralentit au départ, pause si onglet masqué
   setTimeout(()=>{
     const gearBtn=document.getElementById('btn-settings-open');
     const gi=document.getElementById('gear-icon');
     if(gearBtn&&gi){
-      let speed=0,target=0,angle=0,last=null;
+      let speed=0,target=0,angle=0,last=null,running=true;
       gi.style.transformOrigin='50% 50%';
       const anim=(ts)=>{
+        if(!running){last=null;requestAnimationFrame(anim);return;}
         if(last!==null){
           const dt=Math.min(ts-last,50);
           speed+=(target-speed)*0.06;
@@ -1971,6 +1983,7 @@ function startApp(){
       };
       gearBtn.addEventListener('mouseenter',()=>{target=2;});
       gearBtn.addEventListener('mouseleave',()=>{target=0;});
+      document.addEventListener('visibilitychange',()=>{running=!document.hidden;});
       requestAnimationFrame(anim);
     }
   }, 200);
