@@ -186,20 +186,20 @@ function generateRapportMensuel() {
     - orders.reduce((a,o)=>a+(o.feeFixedAtTime??currentConfig.feeFixed)+(o.totalReceived*((o.feePctAtTime??currentConfig.feePercent)/100)),0);
 
   const lines = [
-    { label:'📅 Période', value: period },
-    { label:'💰 Profit Net', value: `€${stats.netProfit.toFixed(2)}`, color: stats.netProfit >= 0 ? '#34d399' : '#f87171' },
-    { label:'📈 Chiffre d\'Affaires', value: `€${stats.revenue.toFixed(2)}` },
-    { label:'🛍 Commandes', value: `${stats.orderCount}` },
-    { label:'🧾 Panier Moyen', value: `€${stats.avgBasket.toFixed(2)}` },
-    { label:'📊 Taux de Marge', value: `${stats.marginRate.toFixed(1)}%` },
-    { label:'🏦 Trésorerie', value: `€${tr.toFixed(2)}` },
-    currentConfig.monthlyGoal > 0 ? { label:'🎯 Objectif', value: `€${currentConfig.monthlyGoal} — ${goalPct}% atteint ${parseFloat(goalPct)>=100?'✅':'⏳'}` } : null,
+    { label:'Période', value: period, icon:'calendar' },
+    { label:'Profit Net', value: `€${stats.netProfit.toFixed(2)}`, color: stats.netProfit >= 0 ? '#34d399' : '#f87171', icon:'trending-up' },
+    { label:'Chiffre d\'Affaires', value: `€${stats.revenue.toFixed(2)}`, icon:'bar-chart-2' },
+    { label:'Commandes', value: `${stats.orderCount}`, icon:'shopping-bag' },
+    { label:'Panier Moyen', value: `€${stats.avgBasket.toFixed(2)}`, icon:'credit-card' },
+    { label:'Taux de Marge', value: `${stats.marginRate.toFixed(1)}%`, icon:'percent' },
+    { label:'Trésorerie', value: `€${tr.toFixed(2)}`, icon:'landmark' },
+    currentConfig.monthlyGoal > 0 ? { label:'Objectif', value: `€${currentConfig.monthlyGoal} — ${goalPct}% atteint ${parseFloat(goalPct)>=100?'✓':'⏳'}`, icon:'target' } : null,
   ].filter(Boolean);
 
   const el = document.getElementById('rapport-content');
   el.innerHTML = [
-    ...lines.map(l => `<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 12px;background:rgba(255,255,255,0.03);border-radius:10px;border:1px solid rgba(255,255,255,0.06)"><span style="color:rgba(255,255,255,0.6);font-size:12px">${l.label}</span><span style="font-weight:700;color:${l.color||'white'};font-size:13px">${l.value}</span></div>`),
-    top3.length ? `<div style="padding:10px 12px;background:rgba(255,255,255,0.03);border-radius:10px;border:1px solid rgba(255,255,255,0.06)"><p style="color:rgba(255,255,255,0.4);font-size:10px;text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px">🏆 Top Produits</p>${top3.map((([n,d],i)=>`<div style="display:flex;justify-content:space-between;margin-bottom:4px"><span style="color:rgba(255,255,255,0.7);font-size:12px">${['🥇','🥈','🥉'][i]} ${n}</span><span style="color:#34d399;font-weight:600;font-size:12px">${fmtEur(d.rev)}</span></div>`)).join('')}</div>` : ''
+    ...lines.map(l => `<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 12px;background:rgba(255,255,255,0.03);border-radius:10px;border:1px solid rgba(255,255,255,0.06)"><span style="color:rgba(255,255,255,0.6);font-size:12px;display:flex;align-items:center;gap:6px"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="opacity:0.5">${getLucidePath(l.icon)}</svg>${l.label}</span><span style="font-weight:700;color:${l.color||'white'};font-size:13px">${l.value}</span></div>`),
+    top3.length ? `<div style="padding:10px 12px;background:rgba(255,255,255,0.03);border-radius:10px;border:1px solid rgba(255,255,255,0.06)"><p style="color:rgba(255,255,255,0.4);font-size:10px;text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px;display:flex;align-items:center;gap:5px"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#fbbf24" stroke-width="2">${getLucidePath('trophy')}</svg> Top Produits</p>${top3.map((([n,d],i)=>`<div style="display:flex;justify-content:space-between;margin-bottom:4px"><span style="color:rgba(255,255,255,0.7);font-size:12px">${['①','②','③'][i]} ${n}</span><span style="color:#34d399;font-weight:600;font-size:12px">${fmtEur(d.rev)}</span></div>`)).join('')}</div>` : ''
   ].join('');
 
   document.getElementById('rapport-period').textContent = period;
@@ -207,9 +207,9 @@ function generateRapportMensuel() {
   if (window.lucide) lucide.createIcons();
 
   document.getElementById('btn-rapport-copy').onclick = () => {
-    const text = `📊 RAPPORT DROPCONTROL — ${period}\n\n` +
+    const text = `RAPPORT DROPCONTROL — ${period}\n\n` +
       lines.map(l => `${l.label}: ${l.value}`).join('\n') +
-      (top3.length ? `\n\n🏆 TOP PRODUITS\n${top3.map(([n,d],i)=>`${['🥇','🥈','🥉'][i]} ${n}: ${fmtEur(d.rev)}`).join('\n')}` : '');
+      (top3.length ? `\n\nTOP PRODUITS\n${top3.map(([n,d],i)=>`${i+1}. ${n}: ${fmtEur(d.rev)}`).join('\n')}` : '');
     navigator.clipboard.writeText(text).then(() => showToast('Rapport copié !', 'success'));
   };
 }
@@ -1527,7 +1527,7 @@ function updateDashboardMetrics(){
   if(badge){badge.textContent=pend.length;badge.classList.toggle('hidden',pend.length===0);}
   if(statsEl)statsEl.textContent=pend.length>0?`${enCours} en cours · ${expedie} expédiés`:'';
   if(pend.length===0){
-    tc2.innerHTML=`<div style="grid-column:1/-1;display:flex;flex-direction:column;align-items:center;gap:8px;padding:24px;opacity:0.5"><div style="font-size:28px">🎉</div><p style="font-size:13px;color:white;font-weight:500">Toutes les commandes livrées !</p><p style="font-size:11px;color:rgba(255,255,255,0.4)">Rien à traiter pour le moment</p></div>`;
+  tc2.innerHTML=`<div style="grid-column:1/-1;display:flex;flex-direction:column;align-items:center;gap:8px;padding:24px;opacity:0.5"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#34d399" stroke-width="1.5"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg><p style="font-size:13px;color:white;font-weight:500">Toutes les commandes livrées !</p><p style="font-size:11px;color:rgba(255,255,255,0.4)">Rien à traiter pour le moment</p></div>`;
   } else {
     pend.forEach((o,i)=>{
       const [avbg,,avcolor]=avatarColor(o.customer||'');
@@ -1570,13 +1570,38 @@ function updateDashboardMetrics(){
   }
 }
 function markAsShipped(id){const o=orders.find(o=>o.id===id);if(!o)return;if(o.status==='Livré'){showToast(`Déjà livrée`,'warn');return;}o.status=o.status==='En cours'?'Expédié':'Livré';saveOrders();renderOrders();updateDashboardMetrics();showToast(`${o.customer} → ${o.status}`);}
+// Helper pour les paths SVG Lucide inline
+function getLucidePath(icon) {
+  const paths = {
+    'calendar':'<rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>',
+    'trending-up':'<polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/>',
+    'bar-chart-2':'<line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/>',
+    'shopping-bag':'<path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/>',
+    'credit-card':'<rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/>',
+    'percent':'<line x1="19" y1="5" x2="5" y2="19"/><circle cx="6.5" cy="6.5" r="2.5"/><circle cx="17.5" cy="17.5" r="2.5"/>',
+    'landmark':'<line x1="3" y1="22" x2="21" y2="22"/><line x1="6" y1="18" x2="6" y2="11"/><line x1="10" y1="18" x2="10" y2="11"/><line x1="14" y1="18" x2="14" y2="11"/><line x1="18" y1="18" x2="18" y2="11"/><polygon points="12 2 20 7 4 7"/>',
+    'target':'<circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/>',
+    'trophy':'<polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2"/><rect x="6" y="18" width="12" height="4"/>',
+  };
+  return paths[icon] || '';
+}
+
+// Top products rank icons
+const RANK_ICONS = [
+  `<svg width="14" height="14" viewBox="0 0 24 24" fill="#fbbf24" stroke="none"><path d="M12 2l2.4 7.4H22l-6.2 4.5 2.4 7.4L12 17l-6.2 4.3 2.4-7.4L2 9.4h7.6z"/></svg>`,
+  `<svg width="14" height="14" viewBox="0 0 24 24" fill="rgba(255,255,255,0.5)" stroke="none"><path d="M12 2l2.4 7.4H22l-6.2 4.5 2.4 7.4L12 17l-6.2 4.3 2.4-7.4L2 9.4h7.6z"/></svg>`,
+  `<svg width="14" height="14" viewBox="0 0 24 24" fill="#cd7c2f" stroke="none"><path d="M12 2l2.4 7.4H22l-6.2 4.5 2.4 7.4L12 17l-6.2 4.3 2.4-7.4L2 9.4h7.6z"/></svg>`,
+  `<svg width="13" height="13" viewBox="0 0 24 24" fill="rgba(255,255,255,0.25)" stroke="none"><path d="M12 2l2.4 7.4H22l-6.2 4.5 2.4 7.4L12 17l-6.2 4.3 2.4-7.4L2 9.4h7.6z"/></svg>`,
+  `<svg width="12" height="12" viewBox="0 0 24 24" fill="rgba(255,255,255,0.18)" stroke="none"><path d="M12 2l2.4 7.4H22l-6.2 4.5 2.4 7.4L12 17l-6.2 4.3 2.4-7.4L2 9.4h7.6z"/></svg>`,
+];
+
 function renderTopProducts(fo){
   const con=document.getElementById('top-products-container'),pe=document.getElementById('top-products-period');if(!con)return;
   const map={};fo.forEach(o=>{if(!map[o.productName])map[o.productName]={revenue:0,qty:0};map[o.productName].revenue+=o.totalReceived;map[o.productName].qty+=(o.qty||1);});
   const sorted=Object.entries(map).map(([n,d])=>({name:n,...d})).sort((a,b)=>b.revenue-a.revenue).slice(0,5);
   if(pe)pe.textContent=activeMonthFilter==='all'?'Toutes périodes':(()=>{const[y,m]=activeMonthFilter.split('-');return new Date(+y,+m-1,1).toLocaleDateString('fr-FR',{month:'long',year:'numeric'});})();
   con.innerHTML='';if(sorted.length===0){con.innerHTML='<p class="text-sm opacity-40 italic">Aucune commande.</p>';return;}
-  const mx=sorted[0].revenue,me=['🥇','🥈','🥉','4.','5.'];
+  const mx=sorted[0].revenue,me=RANK_ICONS;
   sorted.forEach((p,i)=>{
     const pct=mx>0?(p.revenue/mx)*100:0;
     const barColors=['#fbbf24','rgba(255,255,255,0.6)','#cd7c2f','rgba(255,255,255,0.4)','rgba(255,255,255,0.3)'];
@@ -1856,6 +1881,11 @@ function startApp(){
   activeMonthFilter=orders.some(o=>{if(!o.date)return false;const d=new Date(o.date);return`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`===ck;})?ck:'all';
   buildMonthSelector();renderStock();populateOrderSelect();renderProducts();renderOrders();calculateSimulator();updateDashboardMetrics();
   setTimeout(()=>{ initAllCustomSelects(); initAllSteppers(); }, 150);
+  // Engrenage settings — accélère au hover, ralentit au départ
+  setTimeout(()=>{
+    const gearBtn=document.getElementById('btn-settings-open');
+    if(gearBtn){let speed=7,target=7;const gi=gearBtn.querySelector('i,svg');if(gi){const anim=()=>{speed+=(target-speed)*0.04;gi.style.animationDuration=Math.max(0.3,speed)+'s';requestAnimationFrame(anim);};gearBtn.addEventListener('mouseenter',()=>{target=0.4;});gearBtn.addEventListener('mouseleave',()=>{target=7;});anim();}}
+  }, 200);
 
   // Sync temps réel entre appareils
   initRealtime();
