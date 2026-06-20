@@ -975,27 +975,24 @@ document.addEventListener('keydown',e=>{
   // ? → shortcuts
   if(e.key==='?'||(e.shiftKey&&e.key==='/')){e.preventDefault();showShortcuts();return;}
 
-  // N → nouvelle commande (sans Ctrl pour éviter conflit navigateur)
   if(!ctrl&&!e.shiftKey&&!e.altKey&&(e.key==='n'||e.key==='N')){
     e.preventDefault();switchView('orders');
     setTimeout(()=>{const f=document.getElementById('order-customer');if(f){f.focus();f.scrollIntoView({behavior:'smooth',block:'center'});}},150);
     return;
   }
-  // S → nouveau stock
   if(!ctrl&&!e.shiftKey&&!e.altKey&&(e.key==='s'||e.key==='S')){
     e.preventDefault();switchView('stock');
     setTimeout(()=>{const f=document.getElementById('stock-name');if(f){f.focus();f.scrollIntoView({behavior:'smooth',block:'center'});}},150);
     return;
   }
-
-  if(!ctrl)return;
-  // Ctrl+1-4 navigation
-  if(e.key==='1'){e.preventDefault();switchView('dashboard');}
-  if(e.key==='2'){e.preventDefault();switchView('stock');}
-  if(e.key==='3'){e.preventDefault();switchView('products');}
-  if(e.key==='4'){e.preventDefault();switchView('orders');}
-  // Ctrl+, → settings
-  if(e.key===','){e.preventDefault();loadSettingsInputs();showModal(document.getElementById('settings-modal'));}
+  // Navigation 1-4 — une seule touche
+  if(!ctrl&&!e.shiftKey&&!e.altKey){
+    if(e.key==='1'){e.preventDefault();switchView('dashboard');return;}
+    if(e.key==='2'){e.preventDefault();switchView('stock');return;}
+    if(e.key==='3'){e.preventDefault();switchView('products');return;}
+    if(e.key==='4'){e.preventDefault();switchView('orders');return;}
+    if(e.key===','){e.preventDefault();loadSettingsInputs();showModal(document.getElementById('settings-modal'));return;}
+  }
 });
 
 // ─── MOIS ─────────────────────────────────────────────────
@@ -1657,7 +1654,9 @@ function renderSVGChart(fo){
   const tr2=document.createElementNS(NS,'rect');tr2.setAttribute('rx','8');tr2.setAttribute('fill','rgba(10,10,18,0.97)');tr2.setAttribute('stroke','rgba(255,255,255,0.1)');tr2.setAttribute('stroke-width','1');tr2.setAttribute('width','170');tr2.setAttribute('height','90');
   const els={date:['rgba(255,255,255,0.4)','9'],ca:['rgba(96,165,250,0.95)','11'],profit:['rgba(52,211,153,0.95)','11'],marge:['rgba(255,255,255,0.4)','9'],client:['rgba(255,255,255,0.3)','9']};
   const tel={};Object.entries(els).forEach(([k,[fill,fs]])=>{const t=document.createElementNS(NS,'text');t.setAttribute('fill',fill);t.setAttribute('font-size',fs);tel[k]=t;});
-  tg.append(tr2,...Object.values(tel));svg.appendChild(tg);
+  tg.append(tr2,...Object.values(tel));
+  svg.appendChild(dg);
+  svg.appendChild(tg); // toujours au premier plan
 
   // Dots + hover
   const dg=document.createElementNS(NS,'g');dg.setAttribute('id','chart-dots-group');
@@ -1688,7 +1687,7 @@ function renderSVGChart(fo){
     ha.addEventListener('mouseleave',()=>{cd.setAttribute('r','4');pd.setAttribute('r','4');tg.style.display='none';});
     dg.append(cd,pd,ha);
   });
-  svg.appendChild(dg);
+  // dg & tg already appended above
 }
 
 const deleteModal=document.getElementById('delete-modal');
@@ -1701,6 +1700,38 @@ document.getElementById('btn-confirm-delete').addEventListener('click',()=>{
   else if(type==='order'){const od=orders.find(o=>o.id===id);if(od){const st=stocks.find(s=>s.id===od.stockId);if(st){st.currentQty+=(od.qty||1);saveStocks();}}orders=orders.filter(o=>o.id!==id);saveOrders();buildMonthSelector();renderStock();populateOrderSelect();renderOrders();showToast('Commande supprimée','success');}
   updateDashboardMetrics();hideModal(deleteModal);itemToDelete=null;
 });
+
+// ─── SETTINGS TABS ────────────────────────────────────────
+const tabColors = {
+  business:['rgba(52,211,153,0.1)','rgba(52,211,153,0.2)','#34d399'],
+  payment: ['rgba(96,165,250,0.1)','rgba(96,165,250,0.2)','#60a5fa'],
+  ia:      ['rgba(139,92,246,0.1)','rgba(139,92,246,0.2)','#a78bfa'],
+  data:    ['rgba(251,191,36,0.1)','rgba(251,191,36,0.2)','#fbbf24'],
+};
+const tabMeta = {
+  business:['Business','Objectifs et alertes'],
+  payment: ['Paiement','Frais et passerelle'],
+  ia:      ['Intelligence IA','Modèle et clé API'],
+  data:    ['Données','Sauvegarde et restauration'],
+};
+
+function switchSettingsTab(tab) {
+  // Reset all tabs
+  ['business','payment','ia','data'].forEach(t => {
+    const btn = document.getElementById(`stab-${t}`);
+    if (btn) { btn.style.background='transparent'; btn.style.color='rgba(255,255,255,0.45)'; btn.style.borderColor='transparent'; }
+    document.getElementById(`spanel-${t}`)?.classList.add('hidden');
+  });
+  // Activate selected
+  const [bg,border,color] = tabColors[tab]||tabColors.business;
+  const btn = document.getElementById(`stab-${tab}`);
+  if (btn) { btn.style.background=bg; btn.style.color=color; btn.style.borderColor=border; }
+  document.getElementById(`spanel-${tab}`)?.classList.remove('hidden');
+  const [title,sub] = tabMeta[tab]||tabMeta.business;
+  document.getElementById('stab-title').textContent = title;
+  document.getElementById('stab-sub').textContent = sub;
+  if (window.lucide) lucide.createIcons();
+}
 
 const settingsModal=document.getElementById('settings-modal');
 function loadSettingsInputs(){
