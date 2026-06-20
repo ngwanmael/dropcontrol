@@ -864,15 +864,7 @@ function hideModal(el){
 }
 function initials(name){const p=(name||'?').trim().split(/\s+/);return p.length>=2?(p[0][0]+p[1][0]).toUpperCase():(p[0]||'?').slice(0,2).toUpperCase();}
 
-// Formate les grands nombres : €1234 → €1.2K, €1234567 → €1.2M, €1234567890 → €1.2B
-function fmtEur(val) {
-  const v = Math.abs(val);
-  const sign = val < 0 ? '-' : '';
-  if (v >= 1_000_000_000) return `${sign}€${(val/1_000_000_000).toFixed(1)}B`;
-  if (v >= 1_000_000)     return `${sign}€${(val/1_000_000).toFixed(1)}M`;
-  if (v >= 10_000)        return `${sign}€${(val/1_000).toFixed(1)}K`;
-  return `${sign}€${val.toFixed(2)}`;
-}
+// Formate les grands nombres
 function fmtEur(val) {
   const v = Math.abs(val);
   const sign = val < 0 ? '-' : '';
@@ -1655,8 +1647,6 @@ function renderSVGChart(fo){
   const els={date:['rgba(255,255,255,0.4)','9'],ca:['rgba(96,165,250,0.95)','11'],profit:['rgba(52,211,153,0.95)','11'],marge:['rgba(255,255,255,0.4)','9'],client:['rgba(255,255,255,0.3)','9']};
   const tel={};Object.entries(els).forEach(([k,[fill,fs]])=>{const t=document.createElementNS(NS,'text');t.setAttribute('fill',fill);t.setAttribute('font-size',fs);tel[k]=t;});
   tg.append(tr2,...Object.values(tel));
-  svg.appendChild(dg);
-  svg.appendChild(tg); // toujours au premier plan
 
   // Dots + hover
   const dg=document.createElementNS(NS,'g');dg.setAttribute('id','chart-dots-group');
@@ -1687,7 +1677,8 @@ function renderSVGChart(fo){
     ha.addEventListener('mouseleave',()=>{cd.setAttribute('r','4');pd.setAttribute('r','4');tg.style.display='none';});
     dg.append(cd,pd,ha);
   });
-  // dg & tg already appended above
+  svg.appendChild(dg);
+  svg.appendChild(tg); // tooltip toujours au premier plan
 }
 
 const deleteModal=document.getElementById('delete-modal');
@@ -1738,6 +1729,9 @@ function loadSettingsInputs(){
   document.getElementById('set-fee-fixed').value=currentConfig.feeFixed;document.getElementById('set-fee-percent').value=currentConfig.feePercent;
   document.getElementById('set-stock-alert').value=currentConfig.stockAlert;document.getElementById('set-monthly-goal').value=currentConfig.monthlyGoal;
   document.getElementById('set-initial-capital').value=currentConfig.initialCapital||0;buildPurgeMonthSelect();
+  const gd=document.getElementById('settings-gemini-display');
+  if(gd)gd.textContent=GEMINI_KEY?`••••••••••••${GEMINI_KEY.slice(-8)}`:'Non configurée';
+  switchSettingsTab('business');
 }
 function buildPurgeMonthSelect(){
   const sel=document.getElementById('purge-month-select');if(!sel)return;
