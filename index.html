@@ -75,8 +75,8 @@
 
     /* ── Gear settings animation — inline SVG pour éviter reset lucide ── */
     @keyframes gear-spin { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }
-    #btn-settings-open { transition:all 0.2s, box-shadow 0.2s !important; }
-    #btn-settings-open:hover { background:rgba(139,92,246,0.12) !important; border-color:rgba(139,92,246,0.3) !important; box-shadow:0 0 16px rgba(139,92,246,0.2) !important; color:white !important; }
+    #btn-settings-open { transition:all 0.2s !important; }
+    #btn-settings-open:hover { background:rgba(255,255,255,0.1) !important; border-color:rgba(255,255,255,0.15) !important; color:white !important; }
     #gear-icon { transform-origin:50% 50%; display:block; }
 
     /* ── Modal open animations ── */
@@ -84,10 +84,7 @@
     @keyframes modal-slide-up { from{opacity:0;transform:translateY(20px) scale(0.97)} to{opacity:1;transform:none} }
 
     /* ── Rapport button hover ── */
-    #btn-rapport-open { position:relative; overflow:hidden; }
-    #btn-rapport-open::after { content:''; position:absolute; inset:0; background:linear-gradient(135deg,rgba(139,92,246,0.15),rgba(52,211,153,0.08)); opacity:0; transition:opacity 0.2s; border-radius:inherit; }
-    #btn-rapport-open:hover::after { opacity:1; }
-    #btn-rapport-open:hover { box-shadow:0 0 16px rgba(139,92,246,0.25) !important; transform:translateY(-1px); }
+    #btn-rapport-open:hover { background:rgba(139,92,246,0.18) !important; border-color:rgba(139,92,246,0.4) !important; transform:translateY(-1px); }
     #btn-rapport-open:active { transform:scale(0.96); }
 
     /* ── Raccourcis button hover ── */
