@@ -1453,7 +1453,7 @@
 
   <!-- SIDEBAR -->
   <aside class="glass-sidebar w-64 fixed top-0 left-0 h-full p-6 flex flex-col z-10">
-    <div class="mb-10"><h1 class="text-white tracking-tight font-medium text-xl">DropControl</h1></div>
+    <div class="mb-10"><h1 onclick="location.reload()" style="cursor:pointer;transition:opacity 0.2s" onmouseover="this.style.opacity='0.7'" onmouseout="this.style.opacity='1'" class="text-white tracking-tight font-medium text-xl" title="Recharger l'app">DropControl</h1></div>
     <nav class="flex-1 space-y-1">
       <a id="btn-dashboard" class="nav-item active flex items-center gap-3 px-3 py-2.5 text-white text-sm">Dashboard</a>
       <a id="btn-stock"     class="nav-item flex items-center gap-3 px-3 py-2.5 text-sm opacity-60">Stock &amp; Inventaire <span id="sidebar-stock-badge" class="stock-badge hidden">0</span></a>
@@ -1568,7 +1568,7 @@
               </div>
               <div>
                 <p style="font-size:12px;font-weight:700;color:white;letter-spacing:0.01em">Estimation Marché IA</p>
-                <p style="font-size:10px;color:rgba(255,255,255,0.3)">Vinted · Leboncoin · eBay FR</p>
+                <p style="font-size:10px;color:rgba(255,255,255,0.3)">Leboncoin · eBay FR · Vinted</p>
               </div>
             </div>
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">
@@ -1675,7 +1675,7 @@
           <div id="market-price-cards" style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:20px;position:relative;z-index:1"></div>
           <!-- Analyse + Conseils -->
           <div id="market-analysis-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:16px;position:relative;z-index:1"></div>
-          <p style="font-size:10px;color:rgba(255,255,255,0.2);text-align:center;margin-top:16px;position:relative;z-index:1">⚠ Estimation IA — vérifie sur Vinted avant de fixer ton prix définitif</p>
+          <p style="font-size:10px;color:rgba(255,255,255,0.2);text-align:center;margin-top:16px;position:relative;z-index:1">⚠ Estimation IA — vérifie les prix sur les plateformes avant de fixer ton prix définitif</p>
         </div>
       </div>
 
@@ -1794,21 +1794,26 @@
 
           <!-- Paiement -->
           <div id="spanel-payment" class="spanel hidden space-y-4">
-            <div class="settings-field"><label class="settings-label">💳 Frais Fixes par Vente (€)</label><input id="set-fee-fixed" type="number" class="calculator-input text-sm" placeholder="0.00" step="0.01"><p class="settings-hint">Ex: frais d'emballage fixes par commande Vinted</p></div>
-            <div class="settings-field"><label class="settings-label">📊 Frais Variables (%)</label><input id="set-fee-percent" type="number" class="calculator-input text-sm" placeholder="0" step="0.1"><p class="settings-hint">Pourcentage prélevé sur le montant de vente (Vinted = 0%)</p></div>
-            <div style="background:rgba(96,165,250,0.06);border:1px solid rgba(96,165,250,0.15);border-radius:12px;padding:14px 16px">
-              <p style="font-size:12px;color:#60a5fa;font-weight:600;margin-bottom:4px">ℹ️ Sur Vinted</p>
-              <p style="font-size:11px;color:rgba(255,255,255,0.45);line-height:1.5">Les frais de service (5% + €0.70) sont payés par l'acheteur. Tu n'as que tes frais d'emballage à déclarer.</p>
-            </div>
+            <div class="settings-field"><label class="settings-label">💳 Frais Fixes par Vente (€)</label><input id="set-fee-fixed" type="number" class="calculator-input text-sm" placeholder="0.00" step="0.01"><p class="settings-hint">Frais fixes prélevés par commande (ex: emballage)</p></div>
+            <div class="settings-field"><label class="settings-label">📊 Frais Variables (%)</label><input id="set-fee-percent" type="number" class="calculator-input text-sm" placeholder="0" step="0.1"><p class="settings-hint">Pourcentage prélevé sur le montant de vente</p></div>
           </div>
 
           <!-- IA -->
           <div id="spanel-ia" class="spanel hidden space-y-4">
-            <div class="settings-field"><label class="settings-label">🤖 Modèle Gemini actif</label><div style="padding:10px 14px;background:rgba(139,92,246,0.08);border:1px solid rgba(139,92,246,0.2);border-radius:10px;font-size:13px;color:#a78bfa;font-weight:500">gemini-2.5-flash-lite</div><p class="settings-hint">Modèle rapide sans mode thinking — idéal pour l'analyse marché</p></div>
-            <div class="settings-field"><label class="settings-label">🔑 Clé API Gemini</label><div id="settings-gemini-display" style="padding:10px 14px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:10px;font-size:12px;color:rgba(255,255,255,0.4);font-family:monospace">••••••••••••</div><p class="settings-hint">Modifiable depuis le SQL Editor Supabase (clé : gemini_key)</p></div>
-            <div style="background:rgba(52,211,153,0.06);border:1px solid rgba(52,211,153,0.15);border-radius:12px;padding:14px 16px">
-              <p style="font-size:12px;color:#34d399;font-weight:600;margin-bottom:4px">✅ Facturation activée</p>
-              <p style="font-size:11px;color:rgba(255,255,255,0.45);line-height:1.5">Quota illimité — tarif ~€0.002 par requête. Tes $10 de crédits durent des mois.</p>
+            <div class="settings-field">
+              <label class="settings-label">🤖 Modèle Gemini</label>
+              <select id="set-gemini-model" class="calculator-input text-sm">
+                <option value="gemini-2.5-flash-lite">gemini-2.5-flash-lite — Rapide, économique</option>
+                <option value="gemini-2.5-flash">gemini-2.5-flash — Équilibré, plus précis</option>
+                <option value="gemini-2.0-flash">gemini-2.0-flash — Stable, sans thinking</option>
+                <option value="gemini-2.5-pro">gemini-2.5-pro — Premium, le plus capable</option>
+              </select>
+              <p class="settings-hint">Le modèle sélectionné sera utilisé pour toutes les fonctions IA. Un rechargement est nécessaire après changement.</p>
+            </div>
+            <div class="settings-field">
+              <label class="settings-label">🔑 Clé API Gemini</label>
+              <div id="settings-gemini-display" style="padding:10px 14px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:10px;font-size:12px;color:rgba(255,255,255,0.4);font-family:monospace">••••••••••••</div>
+              <p class="settings-hint">Modifiable depuis le SQL Editor Supabase (clé : gemini_key)</p>
             </div>
           </div>
 

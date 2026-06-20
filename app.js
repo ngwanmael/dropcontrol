@@ -37,7 +37,7 @@ function hideLoader() {
 
 // ─── GEMINI REQUEST — retry automatique sur 429 ───────────
 async function geminiRequest(prompt, maxTokens = 800) {
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent?key=${GEMINI_KEY}`;
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${GEMINI_KEY}`;
   const body = JSON.stringify({
     contents:[{parts:[{text:prompt}]}],
     generationConfig:{temperature:0, maxOutputTokens:maxTokens}
@@ -339,7 +339,7 @@ function buildDropAIContext() {
       marge: `${((p.selling-(p.cost+p.shipping+p.gatewayFees))/p.selling*100).toFixed(1)}%`
     })),
     config: {
-      plateforme: 'Vinted',
+      plateforme: 'Revente en ligne',
       frais_emballage: `€${currentConfig.feeFixed}`,
       frais_variables: `${currentConfig.feePercent}%`,
       objectif_mensuel: `€${currentConfig.monthlyGoal}`,
@@ -554,7 +554,7 @@ function showMarketResultsInline(r) {
   // Sous-titre avec le nom de l'article analysé
   const sub = document.getElementById('market-result-subtitle');
   const name = document.getElementById('inp-product-name')?.value.trim();
-  if (sub && name) sub.textContent = `${name} · Vinted · Leboncoin · eBay FR`;
+  if (sub && name) sub.textContent = `${name} · Leboncoin · eBay FR · Vinted`;
 
   // Reconstitue les icônes Lucide
   if (window.lucide) lucide.createIcons();
@@ -589,14 +589,20 @@ function showMarketResultsInline(r) {
       ${r.conseils.slice(0,3).map(tip=>`<div style="display:flex;gap:8px;margin-bottom:8px;font-size:12px;color:rgba(255,255,255,0.65);line-height:1.5"><span style="color:#a78bfa;flex-shrink:0;margin-top:1px">→</span>${tip}</div>`).join('')}
     </div>` : ''}`;
 }
-let GEMINI_KEY = null; // chargée depuis Supabase au démarrage
+let GEMINI_KEY = null;
+let GEMINI_MODEL = 'gemini-2.5-flash-lite'; // chargée depuis Supabase au démarrage
 let importedItems = [];
 
 async function loadGeminiKey() {
   try {
-    const { data } = await db.from('dc_data').select('value').eq('key', 'gemini_key').single();
-    if (data?.value) GEMINI_KEY = data.value;
-  } catch(e) { console.warn('Clé Gemini non trouvée', e); }
+    const { data, error } = await db.from('dc_data').select('key,value').in('key',['gemini_key','gemini_model']);
+    if (!error && data) {
+      const keyRow   = data.find(r => r.key === 'gemini_key');
+      const modelRow = data.find(r => r.key === 'gemini_model');
+      if (keyRow?.value)   GEMINI_KEY   = typeof keyRow.value === 'string' ? keyRow.value : JSON.parse(keyRow.value);
+      if (modelRow?.value) GEMINI_MODEL = typeof modelRow.value === 'string' ? modelRow.value : JSON.parse(modelRow.value);
+    }
+  } catch(e) { console.warn('Gemini key/model load failed', e); }
 }
 
 function closeAIModal() {
@@ -1731,6 +1737,8 @@ function loadSettingsInputs(){
   document.getElementById('set-initial-capital').value=currentConfig.initialCapital||0;buildPurgeMonthSelect();
   const gd=document.getElementById('settings-gemini-display');
   if(gd)gd.textContent=GEMINI_KEY?`••••••••••••${GEMINI_KEY.slice(-8)}`:'Non configurée';
+  const ms=document.getElementById('set-gemini-model');
+  if(ms)ms.value=GEMINI_MODEL;
   switchSettingsTab('business');
 }
 function buildPurgeMonthSelect(){
@@ -1742,11 +1750,19 @@ function buildPurgeMonthSelect(){
 document.getElementById('btn-settings-open').addEventListener('click',()=>{loadSettingsInputs();showModal(settingsModal);});
 document.getElementById('btn-settings-close').addEventListener('click',()=>hideModal(settingsModal));
 document.getElementById('btn-settings-close-x').addEventListener('click',()=>hideModal(settingsModal));
-document.getElementById('btn-settings-save').addEventListener('click',()=>{
+document.getElementById('btn-settings-save').addEventListener('click', async ()=>{
   currentConfig.feeFixed=parseFloat(document.getElementById('set-fee-fixed').value)||0;currentConfig.feePercent=parseFloat(document.getElementById('set-fee-percent').value)||0;
   currentConfig.stockAlert=parseInt(document.getElementById('set-stock-alert').value)||0;currentConfig.monthlyGoal=parseFloat(document.getElementById('set-monthly-goal').value)||0;
   currentConfig.initialCapital=parseFloat(document.getElementById('set-initial-capital').value)||0;
-  saveConfig();hideModal(settingsModal);calculateSimulator();updateDashboardMetrics();renderStock();showToast('Configuration enregistrée');
+  // Modèle Gemini
+  const selectedModel = document.getElementById('set-gemini-model')?.value;
+  if (selectedModel && selectedModel !== GEMINI_MODEL) {
+    GEMINI_MODEL = selectedModel;
+    await dbSave('gemini_model', selectedModel);
+    showToast('Modèle mis à jour — rechargez la page pour l\'appliquer', 'warn');
+  }
+  saveConfig();hideModal(settingsModal);calculateSimulator();updateDashboardMetrics();renderStock();
+  if (!selectedModel || selectedModel === GEMINI_MODEL) showToast('Configuration enregistrée');
 });
 document.getElementById('btn-export-data').addEventListener('click',()=>{
   const bk={_app:'DropControl',_version:2,_exportedAt:new Date().toISOString(),dc_stocks:JSON.stringify(stocks),dc_products:JSON.stringify(products),dc_orders:JSON.stringify(orders),dropControlConfig:JSON.stringify(currentConfig)};
