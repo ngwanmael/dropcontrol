@@ -1908,11 +1908,13 @@ document.addEventListener('DOMContentLoaded', async () => {
     console.error('Init error:', e);
   } finally {
     const elapsed = Date.now() - splashStart;
-    const minTime = hasSession ? 400 : 1800; // 1.8s minimum si pas connecté
+    const minTime = hasSession ? 400 : 1800;
     const wait = Math.max(0, minTime - elapsed);
-    setTimeout(() => hideLoader(hasSession), wait);
+    setTimeout(() => {
+      hideLoader(hasSession);
+      initLockScreen(startApp);
+    }, wait);
   }
-  initLockScreen(startApp);
 });
 function startApp(){
   const now=new Date(),ck=`${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
