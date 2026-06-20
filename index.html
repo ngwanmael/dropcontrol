@@ -1426,23 +1426,27 @@
 <body class="min-h-screen text-gray-300">
 
   <!-- Écran de chargement Supabase -->
-  <div id="app-loader" style="position:fixed;inset:0;z-index:600;background:#0d0d10;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:24px;transition:opacity 0.3s;">
-    <div style="position:relative;width:72px;height:72px">
-      <div style="position:absolute;inset:0;border-radius:50%;border:1px dashed rgba(139,92,246,0.2);animation:loader-orbit-1 3s linear infinite"></div>
-      <div style="position:absolute;inset:-12px;border-radius:50%;border:1px dashed rgba(52,211,153,0.15);animation:loader-orbit-2 5s linear infinite"></div>
-      <div style="position:absolute;inset:0;border-radius:50%;animation:loader-orbit-1 2.5s linear infinite">
-        <div style="position:absolute;width:7px;height:7px;border-radius:50%;background:#a78bfa;box-shadow:0 0 8px rgba(167,139,250,0.9);top:-3.5px;left:50%;margin-left:-3.5px"></div>
+  <div id="app-loader" style="position:fixed;inset:0;z-index:600;background:#0d0d10;display:flex;flex-direction:column;align-items:center;justify-content:center;transition:opacity 0.6s cubic-bezier(0.4,0,0.2,1), transform 0.6s cubic-bezier(0.4,0,0.2,1);">
+
+    <!-- Fond subtil -->
+    <div style="position:absolute;inset:0;background:radial-gradient(ellipse 60% 40% at 50% 50%,rgba(139,92,246,0.06),transparent 70%);pointer-events:none"></div>
+
+    <!-- Contenu centré -->
+    <div style="display:flex;flex-direction:column;align-items:center;gap:0;position:relative;z-index:1">
+
+      <!-- Nom principal -->
+      <div style="overflow:hidden;padding-bottom:4px">
+        <h1 id="splash-title" style="font-size:clamp(40px,7vw,72px);font-weight:800;letter-spacing:-0.04em;line-height:1;background:linear-gradient(135deg,white 0%,rgba(255,255,255,0.85) 50%,rgba(200,200,220,0.7) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;opacity:0;transform:translateY(40px);transition:opacity 0.7s cubic-bezier(0.2,0.9,0.3,1),transform 0.7s cubic-bezier(0.2,0.9,0.3,1)">DropControl</h1>
       </div>
-      <div style="position:absolute;inset:-12px;border-radius:50%;animation:loader-orbit-2 4s linear infinite">
-        <div style="position:absolute;width:6px;height:6px;border-radius:50%;background:#34d399;box-shadow:0 0 8px rgba(52,211,153,0.9);top:-3px;left:50%;margin-left:-3px"></div>
+
+      <!-- Tagline -->
+      <p id="splash-tag" style="font-size:13px;color:rgba(255,255,255,0.3);letter-spacing:0.12em;text-transform:uppercase;margin-top:12px;opacity:0;transform:translateY(12px);transition:opacity 0.6s 0.35s ease,transform 0.6s 0.35s ease">Votre business, sous contrôle</p>
+
+      <!-- Barre de progression -->
+      <div style="margin-top:48px;width:200px;height:1px;background:rgba(255,255,255,0.08);border-radius:2px;overflow:hidden;opacity:0;transition:opacity 0.4s 0.5s ease" id="splash-bar-wrap">
+        <div id="splash-bar" style="height:100%;width:0%;background:linear-gradient(90deg,rgba(139,92,246,0.6),rgba(52,211,153,0.8),rgba(139,92,246,0.6));background-size:200% 100%;border-radius:2px;transition:width 3s cubic-bezier(0.1,0.9,0.2,1)"></div>
       </div>
-      <div style="position:absolute;top:50%;left:50%;width:38px;height:38px;background:linear-gradient(135deg,rgba(139,92,246,0.2),rgba(52,211,153,0.1));border:1px solid rgba(139,92,246,0.35);border-radius:12px;display:flex;align-items:center;justify-content:center;animation:loader-center-pulse 2s ease-in-out infinite">
-        <i data-lucide="sparkles" style="width:17px;height:17px;color:#a78bfa"></i>
-      </div>
-    </div>
-    <div style="text-align:center">
-      <p style="background:linear-gradient(135deg,#a78bfa,#34d399);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;font-size:16px;font-weight:700;font-family:'DM Sans',sans-serif;">DropControl</p>
-      <p style="color:rgba(255,255,255,0.3);font-size:12px;font-family:'DM Sans',sans-serif;margin-top:5px;letter-spacing:0.03em">Synchronisation…</p>
+
     </div>
   </div>
   <style>@keyframes dc-spin{to{transform:rotate(360deg)}}</style>

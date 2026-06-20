@@ -27,12 +27,30 @@ async function dbLoadAll() {
   } catch(e) { console.warn('Cloud load failed:', e); return []; }
 }
 
-// Loader UI
+// Splash screen — anime les éléments
+function initSplash() {
+  requestAnimationFrame(() => {
+    const title = document.getElementById('splash-title');
+    const tag   = document.getElementById('splash-tag');
+    const barWrap = document.getElementById('splash-bar-wrap');
+    const bar   = document.getElementById('splash-bar');
+    if (title) { title.style.opacity='1'; title.style.transform='none'; }
+    if (tag)   { tag.style.opacity='1'; tag.style.transform='none'; }
+    if (barWrap) { setTimeout(()=>{ barWrap.style.opacity='1'; if(bar) bar.style.width='85%'; }, 100); }
+  });
+}
+
 function hideLoader() {
   const l = document.getElementById('app-loader');
+  const bar = document.getElementById('splash-bar');
   if (!l) return;
-  l.style.opacity = '0';
-  setTimeout(() => l.style.display = 'none', 320);
+  // Barre → 100%
+  if (bar) { bar.style.transition='width 0.4s ease'; bar.style.width='100%'; }
+  setTimeout(() => {
+    l.style.opacity = '0';
+    l.style.transform = 'scale(1.04)';
+    setTimeout(() => { l.style.display = 'none'; }, 650);
+  }, 350);
 }
 
 // ─── GEMINI REQUEST — retry automatique sur 429 ───────────
@@ -783,8 +801,20 @@ async function initLockScreen(onUnlock) {
     submit.textContent = 'Connexion…'; submit.disabled = true;
     const { error } = await db.auth.signInWithPassword({ email: e, password: p });
     if (error) return fail('Email ou mot de passe incorrect');
-    screen.style.display = 'none';
-    onUnlock();
+    // Transition fluide lock → dashboard
+    card.style.transition = 'opacity 0.5s ease, transform 0.5s cubic-bezier(0.4,0,0.2,1), filter 0.5s ease';
+    card.style.opacity = '0';
+    card.style.transform = 'scale(0.95) translateY(-10px)';
+    card.style.filter = 'blur(4px)';
+    setTimeout(() => {
+      screen.style.transition = 'opacity 0.4s ease';
+      screen.style.opacity = '0';
+      setTimeout(() => {
+        screen.style.display = 'none';
+        screen.style.opacity = '';
+        onUnlock();
+      }, 400);
+    }, 250);
   }
 
   submit.addEventListener('click', attempt);
@@ -1867,6 +1897,7 @@ if(bpm)bpm.addEventListener('click',()=>{
 });
 
 document.addEventListener('DOMContentLoaded', async () => {
+  initSplash(); // Lance l'animation du splash
   try {
     await initStorage();
   } catch(e) {
@@ -1880,6 +1911,11 @@ function startApp(){
   const now=new Date(),ck=`${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
   activeMonthFilter=orders.some(o=>{if(!o.date)return false;const d=new Date(o.date);return`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`===ck;})?ck:'all';
   buildMonthSelector();renderStock();populateOrderSelect();renderProducts();renderOrders();calculateSimulator();updateDashboardMetrics();
+  // Animation d'entrée du dashboard
+  const main = document.querySelector('main');
+  const sidebar = document.querySelector('aside');
+  if(main){main.style.opacity='0';main.style.transform='translateY(16px)';requestAnimationFrame(()=>{main.style.transition='opacity 0.6s 0.1s ease,transform 0.6s 0.1s cubic-bezier(0.2,0.9,0.3,1)';main.style.opacity='1';main.style.transform='none';});}
+  if(sidebar){sidebar.style.opacity='0';requestAnimationFrame(()=>{sidebar.style.transition='opacity 0.5s ease';sidebar.style.opacity='1';});}
   setTimeout(()=>{ initAllCustomSelects(); initAllSteppers(); }, 150);
   // Engrenage settings — accélère au hover, ralentit au départ
   setTimeout(()=>{
@@ -1971,7 +2007,28 @@ function startApp(){
   const btnLogout = document.getElementById('btn-logout');
   if (btnLogout) btnLogout.addEventListener('click', async () => {
     await db.auth.signOut();
-    showToast('Déconnecté', 'success');
-    setTimeout(() => window.location.reload(), 800);
+    hideModal(document.getElementById('settings-modal'));
+    // Transition fluide vers la page de connexion
+    const main = document.querySelector('main');
+    const sidebar = document.querySelector('aside');
+    [main, sidebar].forEach(el => { if(el){el.style.transition='opacity 0.4s ease';el.style.opacity='0';} });
+    setTimeout(() => {
+      const lock = document.getElementById('lock-screen');
+      if (lock) {
+        lock.style.opacity = '0';
+        lock.style.display = 'flex';
+        requestAnimationFrame(() => {
+          lock.style.transition = 'opacity 0.5s ease';
+          lock.style.opacity = '1';
+        });
+        // Reset lock card
+        const card = lock.querySelector('.lock-card');
+        if (card) { card.style.opacity='1'; card.style.transform='none'; card.style.filter='none'; }
+        document.getElementById('lock-email').value = '';
+        document.getElementById('lock-input').value = '';
+        document.getElementById('lock-error').textContent = '';
+      }
+      [main, sidebar].forEach(el => { if(el) el.style.opacity='0'; });
+    }, 400);
   });
 }
