@@ -73,12 +73,26 @@
     .goal-bar-fill.over { animation:goal-pulse 1.8s ease-in-out infinite !important; }
     .top-bar-fill { transition:width 0.8s cubic-bezier(0.2,0.9,0.3,1) !important; }
 
-    /* ── Gear settings animation ── */
+    /* ── Gear settings animation — inline SVG pour éviter reset lucide ── */
     @keyframes gear-spin { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }
-    #btn-settings-open svg, #btn-settings-open i {
-      transform-origin: center center;
-      animation: gear-spin 99999s linear infinite; /* quasi-immobile par défaut */
-    }
+    #btn-settings-open { transition:all 0.2s, box-shadow 0.2s !important; }
+    #btn-settings-open:hover { background:rgba(139,92,246,0.12) !important; border-color:rgba(139,92,246,0.3) !important; box-shadow:0 0 16px rgba(139,92,246,0.2) !important; color:white !important; }
+    #gear-icon { transform-origin:50% 50%; display:block; }
+
+    /* ── Modal open animations ── */
+    @keyframes modal-scale-in { from{opacity:0;transform:scale(0.93) translateY(12px);filter:blur(3px)} to{opacity:1;transform:none;filter:blur(0)} }
+    @keyframes modal-slide-up { from{opacity:0;transform:translateY(20px) scale(0.97)} to{opacity:1;transform:none} }
+
+    /* ── Rapport button hover ── */
+    #btn-rapport-open { position:relative; overflow:hidden; }
+    #btn-rapport-open::after { content:''; position:absolute; inset:0; background:linear-gradient(135deg,rgba(139,92,246,0.15),rgba(52,211,153,0.08)); opacity:0; transition:opacity 0.2s; border-radius:inherit; }
+    #btn-rapport-open:hover::after { opacity:1; }
+    #btn-rapport-open:hover { box-shadow:0 0 16px rgba(139,92,246,0.25) !important; transform:translateY(-1px); }
+    #btn-rapport-open:active { transform:scale(0.96); }
+
+    /* ── Raccourcis button hover ── */
+    .shortcut-hint-btn:hover { background:rgba(255,255,255,0.08) !important; border-color:rgba(255,255,255,0.15) !important; color:rgba(255,255,255,0.8) !important; transform:translateY(-1px); box-shadow:0 4px 12px rgba(0,0,0,0.2); }
+    .shortcut-hint-btn:active { transform:scale(0.97) !important; }
     @keyframes todo-in { from{opacity:0;transform:translateY(12px) scale(0.97)} to{opacity:1;transform:none} }
     @keyframes todo-done { from{opacity:1;transform:scale(1)} to{opacity:0;transform:scale(0.92)} }
     @keyframes check-pop { 0%{transform:scale(0)} 70%{transform:scale(1.2)} 100%{transform:scale(1)} }
@@ -1519,7 +1533,11 @@
         <div><h2 id="page-title" class="text-white text-2xl font-medium tracking-tight">Overview</h2><p id="page-subtitle" class="mt-1 opacity-50 text-sm">Welcome back to your command center</p></div>
         <div class="flex items-center gap-4">
           <div class="text-right hidden sm:block"><p id="header-date" class="text-sm text-white/70 font-medium capitalize">—</p><p id="header-time" class="text-[11px] text-white/30 mt-0.5">—</p></div>
-          <button id="btn-settings-open" class="p-2.5 rounded-xl bg-white/5 border border-white/5 hover:border-white/10 text-gray-400 hover:text-white transition flex items-center justify-center"><i data-lucide="settings" class="w-5 h-5"></i></button>
+          <button id="btn-settings-open" class="p-2.5 rounded-xl bg-white/5 border border-white/5 text-gray-400 flex items-center justify-center">
+            <svg id="gear-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/>
+            </svg>
+          </button>
         </div>
       </div>
     </header>
@@ -1532,7 +1550,7 @@
           <div class="flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span><p class="text-sm font-medium text-white/60">Période :</p></div>
           <select id="dash-month-selector" class="calculator-input py-1.5 px-4 text-sm bg-white/5 border-white/10 rounded-xl outline-none text-white font-medium cursor-pointer w-auto"><option value="all">Toutes périodes</option></select>
           <div class="flex items-center gap-2 bg-white/5 border border-white/10 px-4 py-1.5 rounded-xl text-sm text-white/70"><span class="text-xs text-white/40 uppercase tracking-wider font-medium mr-1">Trésorerie :</span><span id="dash-budget-display" class="font-semibold text-white">€0.00</span><svg id="treso-sparkline" class="treso-sparkline" width="60" height="20" viewBox="0 0 60 20"></svg></div>
-          <button onclick="generateRapportMensuel()" style="display:flex;align-items:center;gap:7px;padding:7px 14px;border-radius:12px;background:rgba(139,92,246,0.1);border:1px solid rgba(139,92,246,0.25);color:#a78bfa;font-size:12px;font-weight:600;cursor:pointer;transition:all 0.2s" onmouseover="this.style.background='rgba(139,92,246,0.18)'" onmouseout="this.style.background='rgba(139,92,246,0.1)'">
+          <button id="btn-rapport-open" onclick="generateRapportMensuel()" style="display:flex;align-items:center;gap:7px;padding:7px 14px;border-radius:12px;background:rgba(139,92,246,0.1);border:1px solid rgba(139,92,246,0.25);color:#a78bfa;font-size:12px;font-weight:600;cursor:pointer;transition:all 0.2s">
             <i data-lucide="file-bar-chart" style="width:14px;height:14px"></i>
             Rapport
           </button>
@@ -1541,9 +1559,9 @@
       <section class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 mb-10">
         <div id="kpi-profit"  class="metric-card rounded-2xl p-6"><div class="flex justify-between items-start mb-2"><p class="text-xs uppercase tracking-widest opacity-50">Net Profit</p><i data-lucide="trending-up" class="w-4 h-4 text-emerald-400"></i></div><p id="dash-profit" class="text-2xl text-emerald-400 font-medium">€0.00<span id="trend-profit" class="kpi-trend kpi-trend-flat" style="font-size:9px;vertical-align:middle"></span></p><p id="dash-profit-compare" class="text-xs mt-3 opacity-50">Objectif du mois ciblé</p><div class="goal-bar-track"><div id="dash-goal-bar" class="goal-bar-fill" style="width:0%"></div></div></div>
         <div id="kpi-revenue" class="metric-card rounded-2xl p-6"><div class="flex justify-between items-start mb-2"><p class="text-xs uppercase tracking-widest opacity-50">Chiffre d'affaires</p><i data-lucide="dollar-sign" class="w-4 h-4 text-blue-400"></i></div><p id="dash-revenue" class="text-2xl text-white font-medium">€0.00<span id="trend-revenue" class="kpi-trend kpi-trend-flat" style="font-size:9px;vertical-align:middle"></span></p><p id="dash-revenue-compare" class="text-xs mt-3 opacity-40">Total encaissé</p></div>
-        <div id="kpi-orders" class="metric-card rounded-2xl p-6"><div class="flex justify-between items-start mb-2"><p class="text-xs uppercase tracking-widest opacity-50">Orders</p><i data-lucide="shopping-bag" class="w-4 h-4 text-white/50"></i></div><p id="dash-orders" class="text-2xl text-white font-medium">0<span id="trend-orders" class="kpi-trend kpi-trend-flat" style="font-size:9px;vertical-align:middle"></span></p><p id="dash-orders-compare" class="text-xs mt-3 opacity-40">Commandes au total</p></div>
-        <div id="kpi-basket" class="metric-card rounded-2xl p-6"><div class="flex justify-between items-start mb-2"><p class="text-xs uppercase tracking-widest opacity-50">Panier Moyen</p><i data-lucide="credit-card" class="w-4 h-4 text-white/50"></i></div><p id="dash-roi" class="text-2xl text-white font-medium">€0.00<span id="trend-basket" class="kpi-trend kpi-trend-flat" style="font-size:9px;vertical-align:middle"></span></p><p id="dash-basket-compare" class="text-xs mt-3 opacity-40">Moyenne par vente</p></div>
-        <div id="kpi-margin" class="metric-card rounded-2xl p-6"><div class="flex justify-between items-start mb-2"><p class="text-xs uppercase tracking-widest opacity-50">Taux de Marge</p><i data-lucide="percent" class="w-4 h-4 text-emerald-400"></i></div><p id="dash-margin-rate" class="text-2xl text-white font-medium">0.0%<span id="trend-margin" class="kpi-trend kpi-trend-flat" style="font-size:9px;vertical-align:middle"></span></p><p id="dash-margin-compare" class="text-xs mt-3 opacity-40">Santé globale du mois</p></div>
+        <div id="kpi-orders" class="metric-card rounded-2xl p-6"><div class="flex justify-between items-start mb-2"><p class="text-xs uppercase tracking-widest opacity-50">Orders</p><i data-lucide="shopping-bag" class="w-4 h-4" style="color:#a78bfa"></i></div><p id="dash-orders" class="text-2xl text-white font-medium">0<span id="trend-orders" class="kpi-trend kpi-trend-flat" style="font-size:9px;vertical-align:middle"></span></p><p id="dash-orders-compare" class="text-xs mt-3 opacity-40">Commandes au total</p></div>
+        <div id="kpi-basket" class="metric-card rounded-2xl p-6"><div class="flex justify-between items-start mb-2"><p class="text-xs uppercase tracking-widest opacity-50">Panier Moyen</p><i data-lucide="credit-card" class="w-4 h-4" style="color:#22d3ee"></i></div><p id="dash-roi" class="text-2xl text-white font-medium">€0.00<span id="trend-basket" class="kpi-trend kpi-trend-flat" style="font-size:9px;vertical-align:middle"></span></p><p id="dash-basket-compare" class="text-xs mt-3 opacity-40">Moyenne par vente</p></div>
+        <div id="kpi-margin" class="metric-card rounded-2xl p-6"><div class="flex justify-between items-start mb-2"><p class="text-xs uppercase tracking-widest opacity-50">Taux de Marge</p><i data-lucide="percent" class="w-4 h-4" style="color:#fbbf24"></i></div><p id="dash-margin-rate" class="text-2xl text-white font-medium">0.0%<span id="trend-margin" class="kpi-trend kpi-trend-flat" style="font-size:9px;vertical-align:middle"></span></p><p id="dash-margin-compare" class="text-xs mt-3 opacity-40">Santé globale du mois</p></div>
       </section>
       <div class="grid grid-cols-1 xl:grid-cols-3 gap-6">
         <div class="panel-glass xl:col-span-2 rounded-2xl p-6"><h3 class="text-xs text-white/80 mb-6 font-medium uppercase tracking-wider">Sales Trend (Live)</h3><svg id="chart-svg" viewBox="0 0 600 200" class="w-full h-48" style="overflow:visible"><line x1="50" y1="20" x2="600" y2="20" stroke="rgba(255,255,255,0.04)" stroke-width="1"/><line x1="50" y1="62" x2="600" y2="62" stroke="rgba(255,255,255,0.03)" stroke-width="1"/><line x1="50" y1="105" x2="600" y2="105" stroke="rgba(255,255,255,0.04)" stroke-width="1"/><line x1="50" y1="148" x2="600" y2="148" stroke="rgba(255,255,255,0.03)" stroke-width="1"/><line x1="50" y1="190" x2="600" y2="190" stroke="rgba(255,255,255,0.06)" stroke-width="1"/><text id="chart-txt-max" x="0" y="24" fill="rgba(255,255,255,0.3)" font-size="10" font-weight="500">€100</text><text id="chart-txt-mid" x="0" y="109" fill="rgba(255,255,255,0.2)" font-size="10">€50</text><text x="0" y="194" fill="rgba(255,255,255,0.2)" font-size="10">€0</text></svg></div>
@@ -1799,7 +1817,7 @@
 
   <!-- MODAL PARAMÈTRES -->
   <div id="settings-modal" style="display:none!important" class="fixed inset-0 bg-black/70 backdrop-blur-md items-center justify-center z-50 p-4">
-    <div class="panel-glass rounded-2xl w-full border border-white/10 shadow-2xl flex" style="max-height:88vh;max-width:680px;overflow:hidden">
+    <div class="panel-glass rounded-2xl w-full border border-white/10 shadow-2xl flex" style="max-height:88vh;max-width:680px;overflow:hidden;animation:modal-scale-in 0.35s cubic-bezier(0.2,0.9,0.3,1) both">
 
       <!-- Sidebar catégories -->
       <div style="width:200px;flex-shrink:0;border-right:1px solid rgba(255,255,255,0.07);display:flex;flex-direction:column;padding:20px 12px;gap:4px;background:rgba(0,0,0,0.15)">
@@ -2036,7 +2054,7 @@
 
   <!-- RAPPORT MENSUEL -->
   <div id="rapport-modal" class="fixed inset-0 z-[400] hidden items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-    <div class="panel-glass rounded-2xl p-6 w-full max-w-lg">
+    <div class="panel-glass rounded-2xl p-6 w-full max-w-lg" style="animation:modal-slide-up 0.3s cubic-bezier(0.2,0.9,0.3,1) both">
       <div class="flex items-center justify-between mb-5">
         <div class="flex items-center gap-3">
           <div style="width:36px;height:36px;border-radius:10px;background:rgba(139,92,246,0.15);border:1px solid rgba(139,92,246,0.25);display:flex;align-items:center;justify-content:center">

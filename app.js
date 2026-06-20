@@ -1884,27 +1884,23 @@ function startApp(){
   // Engrenage settings — accélère au hover, ralentit au départ
   setTimeout(()=>{
     const gearBtn=document.getElementById('btn-settings-open');
-    if(gearBtn){
-      let speed=0, target=0, angle=0, last=null;
-      const gi=gearBtn.querySelector('svg,i');
-      if(gi){
-        gi.style.transformOrigin='50% 50%';
-        gi.style.display='block';
-        const anim=(ts)=>{
-          if(last!==null){
-            const dt=Math.min(ts-last,50);
-            speed+=(target-speed)*0.06;
-            angle=(angle+speed*dt/1000*360)%360;
-            gi.style.transform=`rotate(${angle.toFixed(2)}deg)`;
-            gi.style.animation='none';
-          }
-          last=ts;
-          requestAnimationFrame(anim);
-        };
-        gearBtn.addEventListener('mouseenter',()=>{target=2;}); // 2 tours/sec au hover
-        gearBtn.addEventListener('mouseleave',()=>{target=0;});
+    const gi=document.getElementById('gear-icon');
+    if(gearBtn&&gi){
+      let speed=0,target=0,angle=0,last=null;
+      gi.style.transformOrigin='50% 50%';
+      const anim=(ts)=>{
+        if(last!==null){
+          const dt=Math.min(ts-last,50);
+          speed+=(target-speed)*0.06;
+          angle=(angle+speed*dt/1000*360)%360;
+          gi.style.transform=`rotate(${angle.toFixed(2)}deg)`;
+        }
+        last=ts;
         requestAnimationFrame(anim);
-      }
+      };
+      gearBtn.addEventListener('mouseenter',()=>{target=2;});
+      gearBtn.addEventListener('mouseleave',()=>{target=0;});
+      requestAnimationFrame(anim);
     }
   }, 200);
 
