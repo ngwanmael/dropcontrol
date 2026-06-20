@@ -75,7 +75,10 @@
 
     /* ── Gear settings animation ── */
     @keyframes gear-spin { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }
-    #btn-settings-open svg, #btn-settings-open i { animation:gear-spin 7s linear infinite; }
+    #btn-settings-open svg, #btn-settings-open i {
+      transform-origin: center center;
+      animation: gear-spin 99999s linear infinite; /* quasi-immobile par défaut */
+    }
     @keyframes todo-in { from{opacity:0;transform:translateY(12px) scale(0.97)} to{opacity:1;transform:none} }
     @keyframes todo-done { from{opacity:1;transform:scale(1)} to{opacity:0;transform:scale(0.92)} }
     @keyframes check-pop { 0%{transform:scale(0)} 70%{transform:scale(1.2)} 100%{transform:scale(1)} }
