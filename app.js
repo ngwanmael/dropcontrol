@@ -27,17 +27,43 @@ async function dbLoadAll() {
   } catch(e) { console.warn('Cloud load failed:', e); return []; }
 }
 
-// Splash screen — anime les éléments
 function initSplash() {
-  requestAnimationFrame(() => {
-    const title = document.getElementById('splash-title');
-    const tag   = document.getElementById('splash-tag');
-    const barWrap = document.getElementById('splash-bar-wrap');
-    const bar   = document.getElementById('splash-bar');
-    if (title) { title.style.opacity='1'; title.style.transform='none'; }
-    if (tag)   { tag.style.opacity='1'; tag.style.transform='none'; }
-    if (barWrap) { setTimeout(()=>{ barWrap.style.opacity='1'; if(bar) bar.style.width='85%'; }, 100); }
-  });
+  const title   = document.getElementById('splash-title');
+  const tag     = document.getElementById('splash-tag');
+  const barWrap = document.getElementById('splash-bar-wrap');
+  const bar     = document.getElementById('splash-bar');
+
+  // État initial sans transition
+  [title, tag, barWrap].forEach(el => { if(el) el.style.transition = 'none'; });
+  if (title)   { title.style.opacity='0';   title.style.transform='translateY(40px)'; }
+  if (tag)     { tag.style.opacity='0';     tag.style.transform='translateY(12px)'; }
+  if (barWrap) { barWrap.style.opacity='0'; }
+
+  // Force reflow Chrome/Safari
+  void document.getElementById('app-loader')?.getBoundingClientRect();
+
+  // Anime le titre
+  if (title) {
+    title.style.transition = 'opacity 0.7s cubic-bezier(0.2,0.9,0.3,1), transform 0.7s cubic-bezier(0.2,0.9,0.3,1)';
+    title.style.opacity = '1';
+    title.style.transform = 'none';
+  }
+  // Tagline avec délai
+  setTimeout(() => {
+    if (tag) {
+      tag.style.transition = 'opacity 0.6s ease, transform 0.6s ease';
+      tag.style.opacity = '1';
+      tag.style.transform = 'none';
+    }
+  }, 350);
+  // Barre de progression
+  setTimeout(() => {
+    if (barWrap) {
+      barWrap.style.transition = 'opacity 0.4s ease';
+      barWrap.style.opacity = '1';
+    }
+    if (bar) bar.style.width = '85%';
+  }, 600);
 }
 
 function hideLoader(quick=false) {
