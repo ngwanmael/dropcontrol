@@ -73,7 +73,43 @@
     .goal-bar-fill.over { animation:goal-pulse 1.8s ease-in-out infinite !important; }
     .top-bar-fill { transition:width 0.8s cubic-bezier(0.2,0.9,0.3,1) !important; }
 
-    /* ── Settings tabs ── */
+    /* ── To-Do List Express ── */
+    @keyframes todo-in { from{opacity:0;transform:translateY(12px) scale(0.97)} to{opacity:1;transform:none} }
+    @keyframes todo-done { from{opacity:1;transform:scale(1)} to{opacity:0;transform:scale(0.92)} }
+    @keyframes check-pop { 0%{transform:scale(0)} 70%{transform:scale(1.2)} 100%{transform:scale(1)} }
+
+    .todo-card {
+      position:relative; overflow:hidden;
+      background:rgba(255,255,255,0.03);
+      border:1px solid rgba(255,255,255,0.08);
+      border-radius:16px; padding:16px;
+      display:flex; flex-direction:column; gap:12px;
+      transition:all 0.2s cubic-bezier(0.2,0.9,0.3,1);
+      animation:todo-in 0.35s cubic-bezier(0.2,0.9,0.3,1) both;
+    }
+    .todo-card::before {
+      content:''; position:absolute; left:0; top:0; bottom:0; width:3px;
+      border-radius:3px 0 0 3px;
+    }
+    .todo-card.status-encours::before { background:linear-gradient(180deg,#fbbf24,#f59e0b); }
+    .todo-card.status-expedie::before { background:linear-gradient(180deg,#60a5fa,#3b82f6); }
+    .todo-card:hover { background:rgba(255,255,255,0.05); border-color:rgba(255,255,255,0.13); transform:translateY(-2px); box-shadow:0 8px 24px rgba(0,0,0,0.3); }
+    .todo-avatar {
+      width:32px; height:32px; border-radius:9px; flex-shrink:0;
+      display:flex; align-items:center; justify-content:center;
+      font-size:11px; font-weight:700; letter-spacing:0.02em;
+    }
+    .todo-btn {
+      width:100%; padding:8px; border-radius:10px; border:none; cursor:pointer;
+      font-size:11px; font-weight:600; letter-spacing:0.02em;
+      display:flex; align-items:center; justify-content:center; gap:6px;
+      transition:all 0.18s;
+    }
+    .todo-btn-expedie { background:rgba(96,165,250,0.1); color:#60a5fa; border:1px solid rgba(96,165,250,0.2); }
+    .todo-btn-expedie:hover { background:rgba(96,165,250,0.2); border-color:rgba(96,165,250,0.4); transform:scale(1.02); }
+    .todo-btn-livre { background:rgba(52,211,153,0.1); color:#34d399; border:1px solid rgba(52,211,153,0.2); }
+    .todo-btn-livre:hover { background:rgba(52,211,153,0.2); border-color:rgba(52,211,153,0.4); transform:scale(1.02); }
+    .todo-btn:active { transform:scale(0.96) !important; }
     .settings-field { display:flex; flex-direction:column; gap:6px; }
     .settings-label { font-size:11px; text-transform:uppercase; letter-spacing:.07em; color:rgba(255,255,255,0.45); font-weight:600; }
     .settings-hint { font-size:11px; color:rgba(255,255,255,0.25); line-height:1.5; }
@@ -1509,7 +1545,17 @@
         <div class="panel-glass rounded-2xl p-6 flex flex-col"><h3 class="text-xs text-white/80 mb-4 font-medium uppercase tracking-wider flex items-center gap-2"><i data-lucide="alert-triangle" class="w-4 h-4 text-red-400"></i> Alerte Rupture Stock</h3><div class="overflow-y-auto max-h-48 rounded-xl border border-white/5 bg-black/10"><table class="w-full text-left text-xs border-collapse"><thead><tr class="border-b border-white/10 bg-white/5 text-[10px] uppercase tracking-wider opacity-60"><th class="p-2.5">Stock Group</th><th class="p-2.5 text-center">Qty</th><th class="p-2.5 text-right">Action</th></tr></thead><tbody id="alert-tbody" class="divide-y divide-white/5 text-gray-300"></tbody></table></div></div>
       </div>
       <div class="panel-glass rounded-2xl p-6 mt-6"><h3 class="text-xs text-white/80 mb-4 font-medium uppercase tracking-wider flex items-center gap-2"><i data-lucide="trophy" class="w-4 h-4 text-amber-400"></i> Top Produits par Revenu<span id="top-products-period" class="ml-auto text-[10px] text-gray-500 normal-case font-normal"></span></h3><div id="top-products-container" class="space-y-3"></div></div>
-      <div class="panel-glass rounded-2xl p-6 mt-6"><h3 class="text-xs text-white/80 mb-4 font-medium uppercase tracking-wider flex items-center gap-2"><i data-lucide="truck" class="w-4 h-4 text-amber-400"></i> To-Do List Express</h3><div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" id="todo-list-container"></div></div>
+      <div class="panel-glass rounded-2xl p-6 mt-6">
+        <div class="flex items-center justify-between mb-5">
+          <h3 class="text-xs text-white/80 font-medium uppercase tracking-wider flex items-center gap-2">
+            <i data-lucide="truck" class="w-4 h-4 text-amber-400"></i>
+            To-Do List Express
+            <span id="todo-count-badge" class="hidden text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/20">0</span>
+          </h3>
+          <span id="todo-stats" class="text-[10px] text-white/25"></span>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3" id="todo-list-container"></div>
+      </div>
     </div>
 
     <!-- STOCK -->

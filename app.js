@@ -1517,9 +1517,45 @@ function updateDashboardMetrics(){
   else{low.forEach(s=>{const tr2=document.createElement('tr');tr2.className='border-b border-white/5';const qc=s.currentQty===0?'text-red-500':'text-red-400';tr2.innerHTML=`<td class="p-2.5 font-medium">${s.name}</td><td class="p-2.5 text-center font-bold ${qc}">${s.currentQty} u</td><td class="p-2.5 text-right"><button onclick="openReapproModal('${s.id}')" class="bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 px-2.5 py-0.5 rounded text-[10px] font-medium uppercase transition">+ Réappro</button></td>`;at.appendChild(tr2);});}
 
   // Todo commandes en attente
-  const tc2=document.getElementById('todo-list-container');tc2.innerHTML='';const pend=orders.filter(o=>o.status!=='Livré');
-  if(pend.length===0){tc2.innerHTML='<p class="text-sm opacity-40 italic col-span-3">Toutes les commandes livrées ! 🎉</p>';}
-  else{pend.forEach(o=>{const c=document.createElement('div');c.className='border border-white/10 bg-white/5 p-4 rounded-xl flex flex-col justify-between space-y-3';c.innerHTML=`<div><div class="flex justify-between items-start"><h5 class="text-white font-medium text-sm">${o.customer}</h5><span class="text-[10px] uppercase font-bold px-2 py-0.5 rounded ${o.status==='En cours'?'bg-amber-500/20 text-amber-300':'bg-blue-500/20 text-blue-300'}">${o.status}</span></div><p class="text-xs text-gray-400 mt-1">${o.productName} <span class="opacity-60">x${o.qty||1}</span></p><p class="text-[11px] text-gray-600 mt-0.5">${formatDate(o.date)}</p></div><button onclick="markAsShipped('${o.id}')" class="w-full text-center text-xs bg-white text-black font-medium py-1.5 rounded-lg hover:bg-gray-200 transition">${o.status==='En cours'?'Passer en expédié':'Marquer comme livré'}</button>`;tc2.appendChild(c);});}
+  // To-Do List Express — design premium
+  const tc2=document.getElementById('todo-list-container');
+  const badge=document.getElementById('todo-count-badge');
+  const statsEl=document.getElementById('todo-stats');
+  tc2.innerHTML='';
+  const pend=orders.filter(o=>o.status!=='Livré').sort((a,b)=>({'En cours':0,'Expédié':1}[a.status]??2)-({'En cours':0,'Expédié':1}[b.status]??2));
+  const enCours=pend.filter(o=>o.status==='En cours').length, expedie=pend.filter(o=>o.status==='Expédié').length;
+  if(badge){badge.textContent=pend.length;badge.classList.toggle('hidden',pend.length===0);}
+  if(statsEl)statsEl.textContent=pend.length>0?`${enCours} en cours · ${expedie} expédiés`:'';
+  if(pend.length===0){
+    tc2.innerHTML=`<div style="grid-column:1/-1;display:flex;flex-direction:column;align-items:center;gap:8px;padding:24px;opacity:0.5"><div style="font-size:28px">🎉</div><p style="font-size:13px;color:white;font-weight:500">Toutes les commandes livrées !</p><p style="font-size:11px;color:rgba(255,255,255,0.4)">Rien à traiter pour le moment</p></div>`;
+  } else {
+    pend.forEach((o,i)=>{
+      const [avbg,,avcolor]=avatarColor(o.customer||'');
+      const isEncours=o.status==='En cours';
+      const fee=(o.feeFixedAtTime??currentConfig.feeFixed)+o.totalReceived*((o.feePctAtTime??currentConfig.feePercent)/100);
+      const profit=(o.totalReceived-fee-(o.unitCostItem??0)*(o.qty||1)).toFixed(2);
+      const c=document.createElement('div');
+      c.className=`todo-card status-${isEncours?'encours':'expedie'}`;
+      c.style.animationDelay=`${i*60}ms`;
+      c.innerHTML=`
+        <div style="display:flex;align-items:center;gap:10px">
+          <div class="todo-avatar" style="background:${avbg};color:${avcolor}">${initials(o.customer)}</div>
+          <div style="flex:1;min-width:0">
+            <div style="font-size:13px;font-weight:600;color:white;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${o.customer}</div>
+            <div style="font-size:10px;color:rgba(255,255,255,0.35);margin-top:1px">${formatDate(o.date)}</div>
+          </div>
+          <span style="font-size:10px;font-weight:700;padding:3px 8px;border-radius:20px;${isEncours?'background:rgba(251,191,36,0.12);color:#fbbf24;border:1px solid rgba(251,191,36,0.25)':'background:rgba(96,165,250,0.12);color:#60a5fa;border:1px solid rgba(96,165,250,0.25)'}">${o.status}</span>
+        </div>
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 12px;background:rgba(255,255,255,0.03);border-radius:10px;border:1px solid rgba(255,255,255,0.06)">
+          <div><div style="font-size:10px;color:rgba(255,255,255,0.35)">Article</div><div style="font-size:12px;font-weight:500;color:white;margin-top:2px">${o.productName||'—'} <span style="opacity:0.4">×${o.qty||1}</span></div></div>
+          <div style="text-align:right"><div style="font-size:10px;color:rgba(255,255,255,0.35)">Profit</div><div style="font-size:13px;font-weight:700;color:${parseFloat(profit)>=0?'#34d399':'#f87171'};margin-top:2px">€${profit}</div></div>
+        </div>
+        <button onclick="markAsShipped('${o.id}')" class="todo-btn ${isEncours?'todo-btn-expedie':'todo-btn-livre'}">
+          ${isEncours?`<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg> Passer en expédié`:`<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6L9 17l-5-5"/></svg> Marquer comme livré`}
+        </button>`;
+      tc2.appendChild(c);
+    });
+  }
 
   if(window.lucide)lucide.createIcons();
   updateSidebarBadge();renderTopProducts(filtered);renderSVGChart(filtered);
