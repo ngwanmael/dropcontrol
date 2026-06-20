@@ -44,13 +44,13 @@ function hideLoader() {
   const l = document.getElementById('app-loader');
   const bar = document.getElementById('splash-bar');
   if (!l) return;
-  // Barre → 100%
+  // Barre → 100% puis attendre un peu avant de partir
   if (bar) { bar.style.transition='width 0.4s ease'; bar.style.width='100%'; }
   setTimeout(() => {
     l.style.opacity = '0';
     l.style.transform = 'scale(1.04)';
     setTimeout(() => { l.style.display = 'none'; }, 650);
-  }, 350);
+  }, 900); // 900ms après la fin du chargement = on voit bien l'intro
 }
 
 // ─── GEMINI REQUEST — retry automatique sur 429 ───────────
