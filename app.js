@@ -1898,6 +1898,7 @@ if(bpm)bpm.addEventListener('click',()=>{
 
 document.addEventListener('DOMContentLoaded', async () => {
   initSplash();
+  const splashStart = Date.now();
   let hasSession = false;
   try {
     await initStorage();
@@ -1906,7 +1907,10 @@ document.addEventListener('DOMContentLoaded', async () => {
   } catch(e) {
     console.error('Init error:', e);
   } finally {
-    hideLoader(hasSession); // court si déjà connecté, long sinon
+    const elapsed = Date.now() - splashStart;
+    const minTime = hasSession ? 400 : 1800; // 1.8s minimum si pas connecté
+    const wait = Math.max(0, minTime - elapsed);
+    setTimeout(() => hideLoader(hasSession), wait);
   }
   initLockScreen(startApp);
 });
