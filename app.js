@@ -1589,7 +1589,7 @@ function updateDashboardMetrics(){
 
   // Alertes stock
   const at=document.getElementById('alert-tbody');at.innerHTML='';const low=stocks.filter(s=>s.currentQty<=currentConfig.stockAlert);
-  if(low.length===0){at.innerHTML='<tr><td colspan="3" class="p-4 text-center text-gray-500 italic" style="display:flex;align-items:center;justify-content:center;gap:6px">Aucune rupture ! <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#34d399" stroke-width="2" stroke-linecap="round"><path d="M4.5 16.5c-1.5 1.5-2 4-2 4s2.5-.5 4-2L17 7.5A2.5 2.5 0 0012.5 3L4.5 16.5z"/><path d="M12 5l4 4"/><path d="M15 3s1 1 1 2-1 2-1 2"/><circle cx="6" cy="18" r="1"/></svg></td></tr>';}
+  if(low.length===0){at.innerHTML='<tr><td colspan="3" class="p-4 text-center text-gray-500 italic"><div style="display:flex;align-items:center;justify-content:center;gap:6px">Aucune rupture ! <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#6b7280" stroke-width="2" stroke-linecap="round"><path d="M4.5 16.5c-1.5 1.5-2 4-2 4s2.5-.5 4-2L17 7.5A2.5 2.5 0 0012.5 3L4.5 16.5z"/><path d="M12 5l4 4"/></svg></div></td></tr>';}
   else{low.forEach(s=>{const tr2=document.createElement('tr');tr2.className='border-b border-white/5';const qc=s.currentQty===0?'text-red-500':'text-red-400';tr2.innerHTML=`<td class="p-2.5 font-medium">${s.name}</td><td class="p-2.5 text-center font-bold ${qc}">${s.currentQty} u</td><td class="p-2.5 text-right"><button onclick="openReapproModal('${s.id}')" class="bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 px-2.5 py-0.5 rounded text-[10px] font-medium uppercase transition">+ Réappro</button></td>`;at.appendChild(tr2);});}
 
   // Todo commandes en attente
