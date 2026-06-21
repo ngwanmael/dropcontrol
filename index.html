@@ -344,9 +344,11 @@
     main { max-width:calc(100% - 16rem); overflow-x:hidden; }
 
     /* DATE CHIP */
-    .date-chip { display:inline-flex; align-items:center; gap:10px; background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.07); border-radius:14px; padding:8px 14px 8px 12px; transition:border-color 0.2s,background 0.2s; }
-    .date-chip:hover { background:rgba(255,255,255,0.05); border-color:rgba(255,255,255,0.12); }
-    .date-chip-icon { width:32px; height:32px; border-radius:9px; background:rgba(52,211,153,0.1); border:1px solid rgba(52,211,153,0.2); display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+    .date-chip-wrap { position:relative; display:inline-block; cursor:pointer; }
+    .date-chip { display:inline-flex; align-items:center; gap:10px; background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.07); border-radius:14px; padding:8px 14px 8px 12px; transition:all 0.25s cubic-bezier(0.2,0.9,0.3,1); }
+    .date-chip-wrap:hover .date-chip { background:rgba(52,211,153,0.06); border-color:rgba(52,211,153,0.2); transform:translateY(-1px); box-shadow:0 4px 16px rgba(52,211,153,0.1); }
+    .date-chip-icon { width:32px; height:32px; border-radius:9px; background:rgba(52,211,153,0.1); border:1px solid rgba(52,211,153,0.2); display:flex; align-items:center; justify-content:center; flex-shrink:0; transition:all 0.25s; }
+    .date-chip-wrap:hover .date-chip-icon { background:rgba(52,211,153,0.18); border-color:rgba(52,211,153,0.35); box-shadow:0 0 12px rgba(52,211,153,0.2); }
     .date-chip-date { font-size:13px; font-weight:500; color:rgba(255,255,255,0.85); line-height:1.2; text-transform:capitalize; }
     .date-chip-time { font-size:11px; color:rgba(255,255,255,0.3); margin-top:1px; font-variant-numeric:tabular-nums; }
 

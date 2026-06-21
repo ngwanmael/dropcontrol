@@ -815,14 +815,12 @@ async function initLockScreen(onUnlock) {
   const email   = document.getElementById('lock-email');
   const pwd     = document.getElementById('lock-input');
   const errorEl = document.getElementById('lock-error');
-  const submit  = document.getElementById('lock-submit');
   const card    = screen.querySelector('.lock-card');
 
-  // Déjà connecté ? on démarre directement
-  const { data:{ session } } = await db.auth.getSession();
-  if (session) { onUnlock(); return; }
-
-  screen.style.display = 'flex';
+  // Clone le bouton pour supprimer les anciens listeners (appels multiples)
+  const oldSubmit = document.getElementById('lock-submit');
+  const submit = oldSubmit.cloneNode(true);
+  oldSubmit.parentNode.replaceChild(submit, oldSubmit);
 
   function fail(msg) {
     errorEl.textContent = msg;
@@ -836,25 +834,23 @@ async function initLockScreen(onUnlock) {
     submit.textContent = 'Connexion…'; submit.disabled = true;
     const { error } = await db.auth.signInWithPassword({ email: e, password: p });
     if (error) return fail('Email ou mot de passe incorrect');
-    // Transition fluide lock → dashboard
     card.style.transition = 'opacity 0.5s ease, transform 0.5s cubic-bezier(0.4,0,0.2,1), filter 0.5s ease';
-    card.style.opacity = '0';
-    card.style.transform = 'scale(0.95) translateY(-10px)';
-    card.style.filter = 'blur(4px)';
+    card.style.opacity = '0'; card.style.transform = 'scale(0.95) translateY(-10px)'; card.style.filter = 'blur(4px)';
     setTimeout(() => {
-      screen.style.transition = 'opacity 0.4s ease';
-      screen.style.opacity = '0';
-      setTimeout(() => {
-        screen.style.display = 'none';
-        screen.style.opacity = '';
-        onUnlock();
-      }, 400);
+      screen.style.transition = 'opacity 0.4s ease'; screen.style.opacity = '0';
+      setTimeout(() => { screen.style.display = 'none'; screen.style.opacity = ''; onUnlock(); }, 400);
     }, 250);
   }
 
   submit.addEventListener('click', attempt);
   pwd.addEventListener('keydown',   e => { if (e.key === 'Enter') attempt(); });
   email.addEventListener('keydown', e => { if (e.key === 'Enter') pwd.focus(); });
+
+  // Déjà connecté ? on démarre directement
+  const { data:{ session } } = await db.auth.getSession();
+  if (session) { onUnlock(); return; }
+
+  screen.style.display = 'flex';
   setTimeout(() => email.focus(), 100);
 }
 
@@ -2125,14 +2121,15 @@ function startApp(){
           lock.style.transition = 'opacity 0.5s ease';
           lock.style.opacity = '1';
         });
-        // Reset lock card
         const card = lock.querySelector('.lock-card');
-        if (card) { card.style.opacity='1'; card.style.transform='none'; card.style.filter='none'; }
+        if (card) { card.style.opacity='1'; card.style.transform='none'; card.style.filter='none'; card.style.transition='none'; }
         document.getElementById('lock-email').value = '';
         document.getElementById('lock-input').value = '';
         document.getElementById('lock-error').textContent = '';
       }
       [main, sidebar].forEach(el => { if(el) el.style.opacity='0'; });
+      // Re-initialise les listeners du bouton login
+      initLockScreen(startApp);
     }, 400);
   });
 }
