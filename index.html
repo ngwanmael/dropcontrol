@@ -92,9 +92,9 @@
     }
     .date-chip-wrap:hover .mini-calendar { opacity:1; pointer-events:auto; transform:translateX(-50%) translateY(0) scale(1); }
     .cal-month-title { font-size:12px; font-weight:700; color:white; letter-spacing:0.02em; margin-bottom:10px; text-align:center; }
-    .cal-grid { display:grid; grid-template-columns:repeat(7,1fr); gap:2px; }
-    .cal-day-name { font-size:9px; color:rgba(255,255,255,0.25); text-align:center; padding-bottom:4px; font-weight:600; width:28px; margin:0 auto; display:flex; align-items:center; justify-content:center; }
-    .cal-day { width:28px; height:28px; display:flex; align-items:center; justify-content:center; border-radius:8px; font-size:11px; color:rgba(255,255,255,0.3); position:relative; margin:0 auto; }
+    .cal-grid { display:grid; grid-template-columns:repeat(7,1fr); gap:2px; width:100%; }
+    .cal-day-name { font-size:9px; color:rgba(255,255,255,0.25); text-align:center; padding-bottom:4px; font-weight:600; display:flex; align-items:center; justify-content:center; }
+    .cal-day { height:28px; display:flex; align-items:center; justify-content:center; border-radius:8px; font-size:11px; color:rgba(255,255,255,0.3); position:relative; }
     .cal-day.has-order { color:#34d399; font-weight:700; background:rgba(52,211,153,0.1); }
     .cal-day.has-order::after { content:''; position:absolute; bottom:3px; left:50%; transform:translateX(-50%); width:3px; height:3px; border-radius:50%; background:#34d399; }
     .cal-day.is-today { background:rgba(139,92,246,0.2); color:#a78bfa; font-weight:700; border:1px solid rgba(139,92,246,0.3); }
