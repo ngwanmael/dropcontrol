@@ -1589,7 +1589,7 @@ function updateDashboardMetrics(){
 
   // Alertes stock
   const at=document.getElementById('alert-tbody');at.innerHTML='';const low=stocks.filter(s=>s.currentQty<=currentConfig.stockAlert);
-  if(low.length===0){at.innerHTML='<tr><td colspan="3" class="p-4 text-center text-gray-500 italic">Aucune rupture ! 🚀</td></tr>';}
+  if(low.length===0){at.innerHTML='<tr><td colspan="3" class="p-4 text-center text-gray-500 italic" style="display:flex;align-items:center;justify-content:center;gap:6px">Aucune rupture ! <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#34d399" stroke-width="2" stroke-linecap="round"><path d="M4.5 16.5c-1.5 1.5-2 4-2 4s2.5-.5 4-2L17 7.5A2.5 2.5 0 0012.5 3L4.5 16.5z"/><path d="M12 5l4 4"/><path d="M15 3s1 1 1 2-1 2-1 2"/><circle cx="6" cy="18" r="1"/></svg></td></tr>';}
   else{low.forEach(s=>{const tr2=document.createElement('tr');tr2.className='border-b border-white/5';const qc=s.currentQty===0?'text-red-500':'text-red-400';tr2.innerHTML=`<td class="p-2.5 font-medium">${s.name}</td><td class="p-2.5 text-center font-bold ${qc}">${s.currentQty} u</td><td class="p-2.5 text-right"><button onclick="openReapproModal('${s.id}')" class="bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 px-2.5 py-0.5 rounded text-[10px] font-medium uppercase transition">+ Réappro</button></td>`;at.appendChild(tr2);});}
 
   // Todo commandes en attente
@@ -1635,7 +1635,7 @@ function updateDashboardMetrics(){
 
   if(window.lucide)lucide.createIcons();
   updateSidebarBadge();renderTopProducts(filtered);renderSVGChart(filtered);
-  renderTresoSparkline();
+  renderTresoSparkline();renderMiniCalendar();
   // Trend badges
   if(sc&&prev){
     setTrend('trend-profit', cur.netProfit, prev.netProfit);
@@ -1670,6 +1670,46 @@ const RANK_ICONS = [
   `<svg width="13" height="13" viewBox="0 0 24 24" fill="rgba(255,255,255,0.25)" stroke="none"><path d="M12 2l2.4 7.4H22l-6.2 4.5 2.4 7.4L12 17l-6.2 4.3 2.4-7.4L2 9.4h7.6z"/></svg>`,
   `<svg width="12" height="12" viewBox="0 0 24 24" fill="rgba(255,255,255,0.18)" stroke="none"><path d="M12 2l2.4 7.4H22l-6.2 4.5 2.4 7.4L12 17l-6.2 4.3 2.4-7.4L2 9.4h7.6z"/></svg>`,
 ];
+
+// ─── MINI CALENDRIER ─────────────────────────────────────
+function renderMiniCalendar() {
+  const now = new Date();
+  const year = now.getFullYear(), month = now.getMonth();
+  const title = document.getElementById('cal-month-title');
+  const namesEl = document.getElementById('cal-day-names');
+  const daysEl = document.getElementById('cal-days');
+  if (!title || !namesEl || !daysEl) return;
+
+  title.textContent = new Date(year, month, 1).toLocaleDateString('fr-FR', {month:'long', year:'numeric'}).replace(/^\w/, c => c.toUpperCase());
+
+  // Noms des jours
+  const dayNames = ['L','M','M','J','V','S','D'];
+  namesEl.innerHTML = dayNames.map(d => `<div class="cal-day-name">${d}</div>`).join('');
+
+  // Jours avec commandes ce mois
+  const monthKey = `${year}-${String(month+1).padStart(2,'0')}`;
+  const orderDays = new Set(
+    orders.filter(o => o.date?.startsWith(monthKey))
+          .map(o => new Date(o.date).getDate())
+  );
+
+  // Premier jour du mois (lundi = 0)
+  const firstDay = new Date(year, month, 1);
+  const startOffset = (firstDay.getDay() + 6) % 7; // Lundi = 0
+  const daysInMonth = new Date(year, month+1, 0).getDate();
+  const today = now.getDate();
+
+  let html = '';
+  // Cases vides avant le 1er
+  for (let i = 0; i < startOffset; i++) html += '<div class="cal-day"></div>';
+  // Jours du mois
+  for (let d = 1; d <= daysInMonth; d++) {
+    const isToday = d === today;
+    const hasOrder = orderDays.has(d);
+    html += `<div class="cal-day${isToday?' is-today':''}${hasOrder?' has-order':''}">${d}</div>`;
+  }
+  daysEl.innerHTML = html;
+}
 
 function renderTopProducts(fo){
   const con=document.getElementById('top-products-container'),pe=document.getElementById('top-products-period');if(!con)return;
