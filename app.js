@@ -130,7 +130,16 @@ function initAllCustomSelects() {
 }
 
 function initCustomSelect(sel) {
-  if (!sel || sel.dataset.cs) return;
+  if (!sel) return;
+  // Supprime l'ancien wrapper si existe déjà
+  if (sel.dataset.cs) {
+    const oldWrap = sel.parentNode;
+    if (oldWrap?.classList.contains('cs-wrapper')) {
+      oldWrap.parentNode.insertBefore(sel, oldWrap);
+      oldWrap.remove();
+    }
+    delete sel.dataset.cs;
+  }
   sel.dataset.cs = '1';
   const naturalWidth = sel.offsetWidth;
   const isAutoWidth = sel.classList.contains('w-auto') || (naturalWidth > 0 && naturalWidth < 280);
@@ -914,15 +923,15 @@ function generateId(p){return`${p}-${Date.now()}-${Math.random().toString(36).sl
 function showModal(el){
   el.style.cssText='display:flex!important';
   document.body.classList.add('modal-open');
+  document.body.style.overflow='hidden';
 }
 function hideModal(el){
   el.style.cssText='display:none!important';
-  // Retire modal-open seulement si aucun autre modal n'est ouvert
   const anyOpen=['settings-modal','delete-modal','reappro-modal'].some(id=>{
     const m=document.getElementById(id);
     return m&&m.style.display!=='none'&&m.style.display!=='';
   });
-  if(!anyOpen) document.body.classList.remove('modal-open');
+  if(!anyOpen){document.body.classList.remove('modal-open');document.body.style.overflow='';}
 }
 function initials(name){const p=(name||'?').trim().split(/\s+/);return p.length>=2?(p[0][0]+p[1][0]).toUpperCase():(p[0]||'?').slice(0,2).toUpperCase();}
 
@@ -1957,12 +1966,19 @@ function startApp(){
   const now=new Date(),ck=`${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
   activeMonthFilter=orders.some(o=>{if(!o.date)return false;const d=new Date(o.date);return`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`===ck;})?ck:'all';
   buildMonthSelector();renderStock();populateOrderSelect();renderProducts();renderOrders();calculateSimulator();updateDashboardMetrics();
+  initAllCustomSelects(); initAllSteppers();
   // Animation d'entrée du dashboard
   const main = document.querySelector('main');
   const sidebar = document.querySelector('aside');
   if(main){main.style.opacity='0';main.style.transform='translateY(16px)';requestAnimationFrame(()=>{main.style.transition='opacity 0.6s 0.1s ease,transform 0.6s 0.1s cubic-bezier(0.2,0.9,0.3,1)';main.style.opacity='1';main.style.transform='none';});}
   if(sidebar){sidebar.style.opacity='0';requestAnimationFrame(()=>{sidebar.style.transition='opacity 0.5s ease';sidebar.style.opacity='1';});}
-  setTimeout(()=>{ initAllCustomSelects(); initAllSteppers(); }, 150);
+  // Overview → reload sur mobile uniquement
+  const pageTitle = document.getElementById('page-title');
+  if (pageTitle) {
+    pageTitle.addEventListener('click', () => {
+      if (window.innerWidth <= 768) location.reload();
+    });
+  }
   // Engrenage settings — accélère au hover, ralentit au départ, pause si onglet masqué
   setTimeout(()=>{
     const gearBtn=document.getElementById('btn-settings-open');

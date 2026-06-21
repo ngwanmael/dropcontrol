@@ -129,6 +129,7 @@
     .settings-field { display:flex; flex-direction:column; gap:6px; }
     .settings-label { font-size:11px; text-transform:uppercase; letter-spacing:.07em; color:rgba(255,255,255,0.45); font-weight:600; }
     .settings-hint { font-size:11px; color:rgba(255,255,255,0.25); line-height:1.5; }
+    .settings-mobile-section-label { display:none; }
     .spanel { animation:view-in 0.25s cubic-bezier(0.2,0.9,0.3,1) both; }
     .stab { transition:all 0.2s !important; }
     .stab:hover { background:rgba(255,255,255,0.06) !important; color:rgba(255,255,255,0.7) !important; }
@@ -1191,7 +1192,8 @@
         margin-bottom: 16px !important;
       }
       #page-subtitle { display: none; }
-      #page-title    { font-size: 18px !important; }
+      /* Overview cliquable sur mobile uniquement */
+      #page-title { cursor:pointer; -webkit-tap-highlight-color:transparent; }
       .date-chip     { display: none; }
 
       /* ── KPIs : 2 colonnes ── */
@@ -1269,11 +1271,31 @@
         max-width: 100% !important;
         width: 100% !important;
         max-height: 92vh !important;
+        height: 92vh !important;
         border-left: none !important;
         border-right: none !important;
         border-bottom: none !important;
+        flex-direction: column !important;
         padding-bottom: env(safe-area-inset-bottom, 0px) !important;
       }
+      /* Cache la sidebar desktop */
+      #settings-modal > div > div:first-child { display:none !important; }
+      /* Le contenu scrollable */
+      #settings-modal > div > div:nth-child(2) {
+        flex:1; min-width:0; width:100% !important;
+        overflow-y:auto !important;
+        -webkit-overflow-scrolling:touch !important;
+        overscroll-behavior:contain !important;
+      }
+      /* Header settings mobile → "Paramètres" */
+      #stab-title { font-size:0 !important; }
+      #stab-title::after { content:'Paramètres'; font-size:16px; }
+      #stab-sub { display:none !important; }
+      #settings-modal .spanel { display:block !important; animation:none !important; }
+      #settings-modal .spanel + .spanel { border-top:1px solid rgba(255,255,255,0.06); padding-top:20px; margin-top:4px; }
+      /* Bouton déconnexion visible */
+      #settings-logout-mobile { display:block !important; }
+      .settings-mobile-section-label { display:block !important; font-size:10px; text-transform:uppercase; letter-spacing:.08em; color:rgba(255,255,255,0.3); font-weight:700; margin-bottom:2px; }
 
       /* ── Delete + Reappro modals centrés ── */
       #delete-modal, #reappro-modal { padding: 16px !important; }
@@ -1857,6 +1879,7 @@
 
           <!-- Business -->
           <div id="spanel-business" class="spanel space-y-4">
+            <p class="settings-mobile-section-label">Business</p>
             <div class="settings-field"><label class="settings-label" style="display:flex;align-items:center;gap:6px"><i data-lucide="target" style="width:12px;height:12px;color:#34d399"></i> Objectif Net Mensuel (€)</label><input id="set-monthly-goal" type="number" class="calculator-input text-sm" placeholder="1000"><p class="settings-hint">Sert à calculer ta progression dans le dashboard</p></div>
             <div class="settings-field"><label class="settings-label" style="display:flex;align-items:center;gap:6px"><i data-lucide="landmark" style="width:12px;height:12px;color:#60a5fa"></i> Capital de Départ (€)</label><input id="set-initial-capital" type="number" class="calculator-input text-sm" placeholder="0"><p class="settings-hint">Inclus dans le calcul de ta trésorerie</p></div>
             <div class="settings-field"><label class="settings-label" style="display:flex;align-items:center;gap:6px"><i data-lucide="alert-triangle" style="width:12px;height:12px;color:#fbbf24"></i> Seuil Alerte Stock Bas</label><input id="set-stock-alert" type="number" class="calculator-input text-sm" placeholder="3"><p class="settings-hint">Déclenche l'alerte quand un article passe sous ce seuil</p></div>
@@ -1864,12 +1887,14 @@
 
           <!-- Paiement -->
           <div id="spanel-payment" class="spanel hidden space-y-4">
+            <p class="settings-mobile-section-label">Paiement</p>
             <div class="settings-field"><label class="settings-label" style="display:flex;align-items:center;gap:6px"><i data-lucide="credit-card" style="width:12px;height:12px;color:#a78bfa"></i> Frais Fixes par Vente (€)</label><input id="set-fee-fixed" type="number" class="calculator-input text-sm" placeholder="0.00" step="0.01"><p class="settings-hint">Frais fixes prélevés par commande (ex: emballage)</p></div>
             <div class="settings-field"><label class="settings-label" style="display:flex;align-items:center;gap:6px"><i data-lucide="percent" style="width:12px;height:12px;color:#60a5fa"></i> Frais Variables (%)</label><input id="set-fee-percent" type="number" class="calculator-input text-sm" placeholder="0" step="0.1"><p class="settings-hint">Pourcentage prélevé sur le montant de vente</p></div>
           </div>
 
           <!-- IA -->
           <div id="spanel-ia" class="spanel hidden space-y-4">
+            <p class="settings-mobile-section-label">Intelligence IA</p>
             <div class="settings-field">
               <label class="settings-label" style="display:flex;align-items:center;gap:6px"><i data-lucide="cpu" style="width:12px;height:12px;color:#a78bfa"></i> Modèle Gemini</label>
               <select id="set-gemini-model" class="calculator-input text-sm">
@@ -1889,11 +1914,15 @@
 
           <!-- Données -->
           <div id="spanel-data" class="spanel hidden space-y-4">
+            <p class="settings-mobile-section-label">Données</p>
             <div class="settings-field"><label class="settings-label" style="display:flex;align-items:center;gap:6px"><i data-lucide="hard-drive" style="width:12px;height:12px;color:#34d399"></i> Sauvegarde</label><div style="display:flex;gap:10px"><button id="btn-export-data" type="button" class="flex-1 py-2.5 rounded-xl bg-white/5 hover:bg-white/10 text-white text-xs font-medium border border-white/10 transition flex items-center justify-center gap-2"><i data-lucide="download" style="width:13px;height:13px"></i> Exporter JSON</button><button id="btn-trigger-import" type="button" class="flex-1 py-2.5 rounded-xl bg-white/5 hover:bg-white/10 text-white text-xs font-medium border border-white/10 transition flex items-center justify-center gap-2"><i data-lucide="upload" style="width:13px;height:13px"></i> Importer JSON</button></div><input id="input-import-file" type="file" accept=".json" class="hidden"></div>
             <div class="settings-field"><label class="settings-label" style="display:flex;align-items:center;gap:6px"><i data-lucide="calendar" style="width:12px;height:12px;color:#60a5fa"></i> Effacer un mois</label><div style="display:flex;gap:8px"><select id="purge-month-select" class="calculator-input text-sm" style="flex:1"><option value="">— Choisir un mois —</option></select><button id="btn-purge-month" type="button" class="px-4 py-2 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 text-xs font-medium border border-amber-500/20 transition whitespace-nowrap">Effacer</button></div></div>
             <div class="settings-field">
               <label class="settings-label" style="display:flex;align-items:center;gap:6px;color:#f87171"><i data-lucide="shield-alert" style="width:12px;height:12px"></i> Zone de danger</label>
               <button id="btn-reset-data" type="button" class="w-full py-2.5 rounded-xl bg-red-500/10 hover:bg-red-500/20 text-red-300 text-xs font-medium border border-red-500/20 transition flex items-center justify-center gap-2"><i data-lucide="trash-2" style="width:13px;height:13px"></i> Réinitialiser toutes les données</button>
+            </div>
+            <div id="settings-logout-mobile" class="settings-field" style="display:none">
+              <button id="btn-logout" type="button" class="w-full py-2.5 rounded-xl bg-white/5 hover:bg-white/10 text-white/60 text-xs font-medium border border-white/10 transition flex items-center justify-center gap-2"><i data-lucide="log-out" style="width:13px;height:13px"></i> Se déconnecter</button>
             </div>
           </div>
         </div>
