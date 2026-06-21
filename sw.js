@@ -1,48 +1,57 @@
 // DropControl — Service Worker
-// Cache l'app pour une utilisation hors-ligne
+// Mise à jour automatique à chaque déploiement
 
-const CACHE_NAME = 'dropcontrol-v1';
+const CACHE_VERSION = 'dropcontrol-v3';
 const ASSETS = [
-  '/',
-  '/index.html',
-  '/app.js',
-  '/manifest.json',
-  '/icon-192.png',
-  '/icon-512.png',
-  '/apple-touch-icon.png'
+  '/dropcontrol/',
+  '/dropcontrol/index.html',
+  '/dropcontrol/app.js',
+  '/dropcontrol/manifest.json',
+  '/dropcontrol/icon-192.png',
+  '/dropcontrol/icon-512.png',
+  '/dropcontrol/apple-touch-icon.png'
 ];
 
-// Installation : met tout en cache
+// Installation — met en cache les assets
 self.addEventListener('install', event => {
   event.waitUntil(
-    caches.open(CACHE_NAME).then(cache => cache.addAll(ASSETS))
+    caches.open(CACHE_VERSION).then(cache => cache.addAll(ASSETS))
   );
-  self.skipWaiting();
+  self.skipWaiting(); // Activation immédiate
 });
 
-// Activation : supprime les anciens caches
+// Activation — supprime TOUS les anciens caches
 self.addEventListener('activate', event => {
   event.waitUntil(
     caches.keys().then(keys =>
-      Promise.all(keys.filter(k => k !== CACHE_NAME).map(k => caches.delete(k)))
+      Promise.all(keys.filter(k => k !== CACHE_VERSION).map(k => {
+        console.log('[SW] Suppression ancien cache:', k);
+        return caches.delete(k);
+      }))
     )
   );
-  self.clients.claim();
+  self.clients.claim(); // Prend le contrôle immédiatement
 });
 
-// Fetch : sert depuis le cache, sinon réseau
+// Fetch — Network First : toujours le réseau en priorité, cache en fallback
 self.addEventListener('fetch', event => {
+  // Ignore les requêtes non-GET et les requêtes externes (Supabase, Gemini)
+  if (event.request.method !== 'GET') return;
+  if (!event.request.url.includes(self.location.origin)) return;
+
   event.respondWith(
-    caches.match(event.request).then(cached => {
-      if (cached) return cached;
-      return fetch(event.request).then(response => {
-        // Met à jour le cache si c'est une ressource de l'app
-        if (event.request.url.includes(self.location.origin)) {
+    fetch(event.request)
+      .then(response => {
+        // Met à jour le cache avec la nouvelle version
+        if (response.ok) {
           const clone = response.clone();
-          caches.open(CACHE_NAME).then(cache => cache.put(event.request, clone));
+          caches.open(CACHE_VERSION).then(cache => cache.put(event.request, clone));
         }
         return response;
-      }).catch(() => caches.match('/index.html'));
-    })
+      })
+      .catch(() => {
+        // Hors-ligne : sert depuis le cache
+        return caches.match(event.request) || caches.match('/dropcontrol/index.html');
+      })
   );
 });
